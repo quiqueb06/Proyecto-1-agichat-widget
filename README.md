@@ -1,13 +1,13 @@
 # AGIChat Widget SDK
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
-[![CD](https://github.com/OWNER/REPO/actions/workflows/cd.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/cd.yml)
+[![CI](https://github.com/quiqueb06/Proyecto-1-agichat-widget/actions/workflows/ci.yml/badge.svg)](https://github.com/quiqueb06/Proyecto-1-agichat-widget/actions/workflows/ci.yml)
+[![CD](https://github.com/quiqueb06/Proyecto-1-agichat-widget/actions/workflows/cd.yml/badge.svg)](https://github.com/quiqueb06/Proyecto-1-agichat-widget/actions/workflows/cd.yml)
 ![Cobertura mínima](https://img.shields.io/badge/cobertura-%E2%89%A580%25-brightgreen)
 ![Node](https://img.shields.io/badge/node-%3E%3D20-339933)
 
 SDK para agregar un widget de chat agéntico a cualquier sitio web.
 
-> Reemplaza `OWNER/REPO` en los badges por el nombre real del repositorio.
+> Reemplaza `quiqueb06/Proyecto-1-agichat-widget` en los badges por el nombre real del repositorio.
 
 ## Requisitos
 
