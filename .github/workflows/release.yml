@@ -1,0 +1,28 @@
+name: Release
+
+# Publica el SDK cuando se crea un tag de versión (p. ej. v0.2.0).
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run test:coverage
+      - run: npm run build:lib
+      - run: npm pack
+      - name: Crear GitHub Release con el paquete
+        uses: softprops/action-gh-release@v2
+        with:
+          files: agichat-widget-*.tgz
+          generate_release_notes: true

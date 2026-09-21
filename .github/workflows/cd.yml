@@ -1,0 +1,49 @@
+name: CD
+
+# Se ejecuta cuando un PR se mergea a main (GitHub Flow: main siempre es desplegable).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Verificar y construir
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test:coverage
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-demo
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdk-dist
+          path: dist/
+
+  deploy-demo:
+    name: Desplegar demo en GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
