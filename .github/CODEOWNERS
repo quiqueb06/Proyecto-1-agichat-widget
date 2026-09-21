@@ -1,13 +1,15 @@
 # Cada PR pide revisión automática a los dueños del área (revisión en rueda).
-# Reemplaza @persona-N por los usuarios de GitHub del equipo.
+# Cuando el equipo tenga acceso al repo, descomenta las líneas y cambia @persona-N
+# por el usuario de GitHub de cada integrante.
 
-*                     @persona-1
-/.github/             @persona-1
-/src/types/           @persona-2 @persona-3
-/src/transport/       @persona-2
-/src/core/            @persona-3
-/src/components/      @persona-4
-/src/styles/          @persona-4
-/src/markdown/        @persona-5
-/docs/                @persona-5
-/AGENTS.md            @persona-5
+*                     @quiqueb06
+
+# /.github/           @persona-1
+# /src/types/         @persona-2 @persona-3
+# /src/transport/     @persona-2
+# /src/core/          @persona-3
+# /src/components/    @persona-4
+# /src/styles/        @persona-4
+# /src/markdown/      @persona-5
+# /docs/              @persona-5
+# /AGENTS.md          @persona-5

@@ -18,7 +18,7 @@ gh api -X PUT "repos/${REPO}/branches/main/protection" \
   "required_pull_request_reviews": {
     "required_approving_review_count": 1,
     "dismiss_stale_reviews": true,
-    "require_code_owner_reviews": true
+    "require_code_owner_reviews": false
   },
   "restrictions": null,
   "required_linear_history": true,

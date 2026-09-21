@@ -58,8 +58,8 @@ Corre lo mismo que el pipeline: lint, formato, tipos, tests con cobertura y buil
    ./scripts/proteger-main.sh OWNER/REPO
    ```
    O manualmente en **Settings → Branches → Add rule** para `main`:
-   - Require a pull request before merging (1 aprobación, Require review from Code Owners)
+   - Require a pull request before merging (1 aprobación)
    - Require status checks: `Lint y formato`, `Typecheck`, `Tests y cobertura (>= 80 %)`, `Build`
    - Require branches to be up to date before merging
    - Require conversation resolution before merging
-4. Reemplazar `@persona-N` en `.github/CODEOWNERS` y `OWNER/REPO` en el README.
+4. Reemplazar `@persona-N` en `.github/CODEOWNERS` por los usuarios del equipo.
