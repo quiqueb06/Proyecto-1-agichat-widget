@@ -1,0 +1,11 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #1f2937;
+  background: #f9fafb;
+}
+
+.demo {
+  max-width: 720px;
+  margin: 4rem auto;
+  padding: 0 1rem;
+}
