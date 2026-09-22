@@ -3,3 +3,13 @@
 export { VERSION } from './version';
 export { StatusBadge } from './components/StatusBadge';
 export type { StatusBadgeProps } from './components/StatusBadge';
+export type {
+  Message,
+  ChatTransport,
+  WidgetConfig,
+  ConnectionState,
+  TransportEvent,
+  MockTransportOptions,
+  WebSocketTransportOptions,
+} from './types';
+export { createTransport, MockWebSocketTransport, WebSocketTransport } from './transport';
