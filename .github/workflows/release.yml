@@ -22,7 +22,7 @@ jobs:
       - run: npm run build:lib
       - run: npm pack
       - name: Crear GitHub Release con el paquete
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: agichat-widget-*.tgz
           generate_release_notes: true
