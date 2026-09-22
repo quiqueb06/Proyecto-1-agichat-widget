@@ -29,7 +29,7 @@ jobs:
       - run: npm run lint
       - run: npm run test:coverage
       - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist-demo
       - uses: actions/upload-artifact@v4
