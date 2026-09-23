@@ -1,8 +1,7 @@
-import { StatusBadge, VERSION } from '../src';
+import { AGIChatWidget, StatusBadge, VERSION } from '../src';
 
 /**
  * Página de demostración: simula el sitio de un cliente que integra el widget.
- * Cuando el widget esté listo (Personas 3 y 4), se monta aquí.
  */
 export function App() {
   return (
@@ -13,6 +12,13 @@ export function App() {
         Versión del SDK: <code>{VERSION}</code>
       </p>
       <StatusBadge label="Mock API" />
+      {/* widget conectado al mock: responde con markdown simulado y streaming */}
+      <AGIChatWidget
+        transport="mock"
+        title="AGIChat"
+        welcomeMessage="Hola, ¿en qué te puedo ayudar?"
+        persistHistory
+      />
     </main>
   );
 }
