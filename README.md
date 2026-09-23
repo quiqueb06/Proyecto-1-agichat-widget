@@ -50,5 +50,6 @@ Seguimos **GitHub Flow**. Lee [CONTRIBUTING.md](CONTRIBUTING.md) antes de abrir 
 
 ## Documentación
 
+- [Conexión, Mock API y protocolo WebSocket](docs/TRANSPORT.md)
 - [Arquitectura](docs/ARQUITECTURA.md)
 - [Guía para herramientas agénticas](AGENTS.md)
