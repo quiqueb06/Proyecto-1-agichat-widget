@@ -110,6 +110,27 @@ export const DEFAULT_STYLES = `
   color: var(--_on-primary);
 }
 .agichat-message[data-role='system'], .agichat-welcome { color: var(--_muted); }
+.agichat-markdown > :first-child { margin-top: 0; }
+.agichat-markdown > :last-child { margin-bottom: 0; }
+.agichat-markdown p, .agichat-markdown h1, .agichat-markdown h2, .agichat-markdown h3,
+.agichat-markdown ul, .agichat-markdown ol, .agichat-markdown pre, .agichat-markdown table {
+  margin: 0 0 0.65em;
+}
+.agichat-markdown h1, .agichat-markdown h2, .agichat-markdown h3 { font-size: 1.1em; line-height: 1.3; }
+.agichat-markdown ul, .agichat-markdown ol { padding-left: 1.4em; }
+.agichat-markdown a { color: var(--_primary); text-decoration: underline; }
+.agichat-markdown code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.agichat-markdown :not(pre) > code { padding: 0.1em 0.3em; border-radius: 4px; background: rgb(127 127 127 / 16%); }
+.agichat-markdown pre { max-width: 100%; padding: 0.75em; overflow-x: auto; border-radius: 6px; background: rgb(127 127 127 / 14%); }
+.agichat-markdown pre code { background: transparent; }
+.agichat-markdown table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
+.agichat-markdown th, .agichat-markdown td { padding: 0.3em 0.5em; border: 1px solid var(--_muted); }
+.agichat-markdown th { font-weight: 700; }
+.agichat-markdown .hljs-keyword, .agichat-markdown .hljs-selector-tag,
+.agichat-markdown .hljs-literal { color: #c026d3; }
+.agichat-markdown .hljs-string, .agichat-markdown .hljs-title,
+.agichat-markdown .hljs-attr { color: #15803d; }
+.agichat-markdown .hljs-comment { color: #64748b; }
 .agichat-failed { display: block; margin-top: 4px; font-size: 12px; }
 .agichat-retry {
   margin-left: 6px;

@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { FormEvent, KeyboardEvent } from 'react';
 import type { ConnectionState } from '../types';
 import type { ChatViewProps } from './types';
+import { MarkdownMessage } from '../components/MarkdownMessage';
 
 // texto que se muestra en el encabezado segun el estado de la conexion
 const STATUS_LABELS: Record<ConnectionState, string> = {
@@ -113,7 +114,11 @@ export function DefaultChatView({
                   data-status={message.status}
                   aria-busy={message.status === 'streaming'}
                 >
-                  {message.content}
+                  {message.role === 'assistant' ? (
+                    <MarkdownMessage content={message.content} />
+                  ) : (
+                    message.content
+                  )}
                   {failed && (
                     <span className="agichat-failed">
                       No se envió.

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { Message } from '../types';
+import { MarkdownMessage } from './MarkdownMessage';
 
 type MessageListProps = {
   messages: readonly Message[];
@@ -41,7 +42,11 @@ export function MessageList({
             aria-busy={message.status === 'streaming'}
           >
             <div className="agichat-message__bubble">
-              {message.content}
+              {message.role === 'assistant' ? (
+                <MarkdownMessage content={message.content} />
+              ) : (
+                message.content
+              )}
 
               {failed && (
                 <div className="agichat-failed">

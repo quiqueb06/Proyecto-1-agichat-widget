@@ -21,6 +21,46 @@ npm run dev
 
 La página de demo queda en `http://localhost:5173`.
 
+## Guía de uso
+
+### Integración con React
+
+Importa `AGIChatWidget` desde el paquete y colócalo en tu aplicación. Para desarrollo puedes usar el transporte mock:
+
+```tsx
+import { AGIChatWidget } from 'agichat-widget';
+
+export function App() {
+  return (
+    <AGIChatWidget
+      transport="mock"
+      title="Soporte"
+      welcomeMessage="Hola, ¿en qué te puedo ayudar?"
+    />
+  );
+}
+```
+
+Para conectar un servidor, configura `transport="websocket"` y proporciona un `endpoint` con protocolo `ws:` o `wss:`.
+
+### Integración mediante la API pública
+
+En una aplicación con módulos, importa `AGIChat` e inicializa el widget. Después puedes abrirlo o cerrarlo con los métodos de la API:
+
+```ts
+import { AGIChat } from 'agichat-widget';
+
+AGIChat.init({ transport: 'mock', title: 'Soporte' });
+AGIChat.open();
+AGIChat.close();
+```
+
+La API también está disponible como `window.AGIChat` en el script embebible. Consulta la [guía del SDK](docs/SDK.md) para su configuración.
+
+Las respuestas del asistente admiten Markdown, incluidas tablas GFM y bloques de código con resaltado de sintaxis. El contenido se sanitiza antes de renderizarse; los mensajes del usuario se muestran como texto normal.
+
+Para más opciones de conexión y el protocolo WebSocket, consulta [docs/TRANSPORT.md](docs/TRANSPORT.md).
+
 ## Scripts
 
 | Comando                           | Qué hace                                                                          |
