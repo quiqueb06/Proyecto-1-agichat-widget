@@ -13,3 +13,13 @@ export type {
   WebSocketTransportOptions,
 } from './types';
 export { createTransport, MockWebSocketTransport, WebSocketTransport } from './transport';
+export { ChatStore, createChatStore, createLocalStorageHistory, useChat } from './core';
+export type {
+  ChatHistory,
+  ChatState,
+  ChatStoreEvents,
+  ChatStoreOptions,
+  Listener,
+  LocalStorageHistoryOptions,
+  UseChatResult,
+} from './core';
