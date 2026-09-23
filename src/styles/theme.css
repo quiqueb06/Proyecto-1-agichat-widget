@@ -1,0 +1,86 @@
+.agichat {
+  /* Colores principales personalizables */
+  --agichat-primary: #4f46e5;
+  --agichat-primary-hover: #4338ca;
+
+  /* Colores del tema claro por defecto */
+  --agichat-background: #ffffff;
+  --agichat-surface: #f8fafc;
+
+  --agichat-text: #0f172a;
+  --agichat-text-muted: #64748b;
+
+  --agichat-border: #e2e8f0;
+
+  --agichat-user-message: #4f46e5;
+  --agichat-user-message-text: #ffffff;
+
+  --agichat-assistant-message: #f1f5f9;
+  --agichat-assistant-message-text: #0f172a;
+
+  --agichat-error: #dc2626;
+
+  --agichat-shadow: 0 16px 40px rgb(15 23 42 / 18%);
+
+  --agichat-radius: 16px;
+}
+
+/* Tema claro explícito */
+.agichat[data-theme='light'] {
+  --agichat-background: #ffffff;
+  --agichat-surface: #f8fafc;
+
+  --agichat-text: #0f172a;
+  --agichat-text-muted: #64748b;
+
+  --agichat-border: #e2e8f0;
+
+  --agichat-assistant-message: #f1f5f9;
+  --agichat-assistant-message-text: #0f172a;
+
+  color-scheme: light;
+}
+
+/* Tema oscuro explícito */
+.agichat[data-theme='dark'] {
+  --agichat-background: #0f172a;
+  --agichat-surface: #1e293b;
+
+  --agichat-text: #f8fafc;
+  --agichat-text-muted: #94a3b8;
+
+  --agichat-border: #334155;
+
+  --agichat-assistant-message: #334155;
+  --agichat-assistant-message-text: #f8fafc;
+
+  --agichat-shadow: 0 16px 40px rgb(0 0 0 / 35%);
+
+  color-scheme: dark;
+}
+
+/* Auto: sigue el tema configurado en el sistema operativo */
+@media (prefers-color-scheme: dark) {
+  .agichat[data-theme='auto'] {
+    --agichat-background: #0f172a;
+    --agichat-surface: #1e293b;
+
+    --agichat-text: #f8fafc;
+    --agichat-text-muted: #94a3b8;
+
+    --agichat-border: #334155;
+
+    --agichat-assistant-message: #334155;
+    --agichat-assistant-message-text: #f8fafc;
+
+    --agichat-shadow: 0 16px 40px rgb(0 0 0 / 35%);
+
+    color-scheme: dark;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  .agichat[data-theme='auto'] {
+    color-scheme: light;
+  }
+}

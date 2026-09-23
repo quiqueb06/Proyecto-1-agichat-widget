@@ -8,5 +8,6 @@ coverage/
 !.env.example
 .DS_Store
 .vscode/*
+.vs/*
 !.vscode/extensions.json
 .idea/
