@@ -17,6 +17,7 @@ describe('ChatWindow', () => {
   const inputRef = createRef<HTMLInputElement>();
 
   const baseProps = {
+    id: 'agichat-test-window',
     messages,
     title: 'AGIChat',
     placeholder: 'Escribe un mensaje...',

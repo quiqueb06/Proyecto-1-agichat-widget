@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import type { ChatViewProps } from '../core';
 import { ChatLauncher } from './ChatLauncher';
 import { ChatWindow } from './ChatWindow';
@@ -20,6 +20,7 @@ export function AGIChatView({
   onOpen,
   onClose,
 }: ChatViewProps) {
+  const windowId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(open);
@@ -56,6 +57,7 @@ useEffect(() => {
     <div className="agichat-widget">
       {open && (
         <ChatWindow
+          id={windowId}
           messages={messages}
           isTyping={isTyping}
           title={title}
@@ -74,6 +76,7 @@ useEffect(() => {
       <ChatLauncher
         ref={launcherRef}
         isOpen={open}
+        controlsId={open ? windowId : undefined}
         onClick={open ? onClose : onOpen}
       />
     </div>

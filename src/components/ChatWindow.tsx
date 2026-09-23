@@ -12,6 +12,7 @@ const STATUS_LABELS: Record<ConnectionState, string> = {
 };
 
 type ChatWindowProps = {
+  id: string;
   messages: readonly Message[];
   isTyping?: boolean;
   title: string;
@@ -27,6 +28,7 @@ type ChatWindowProps = {
 };
 
 export function ChatWindow({
+  id,
   messages,
   isTyping = false,
   title,
@@ -42,6 +44,7 @@ export function ChatWindow({
 }: ChatWindowProps) {
   return (
     <section
+      id={id}
       className="agichat-window"
       role="dialog"
       aria-modal="false"

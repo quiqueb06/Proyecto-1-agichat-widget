@@ -266,6 +266,91 @@
   border: 0;
 }
 
+.agichat-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.agichat-status::before {
+  content: '';
+
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  background: currentColor;
+}
+
+.agichat-status[data-state='connected'] {
+  color: #86efac;
+}
+
+.agichat-status[data-state='connecting'],
+.agichat-status[data-state='reconnecting'] {
+  color: #fde68a;
+}
+
+.agichat-status[data-state='disconnected'] {
+  color: #cbd5e1;
+}
+
+.agichat-status[data-state='error'] {
+  color: #fca5a5;
+}
+
+.agichat-error {
+  margin: 0;
+  padding: 10px 14px;
+
+  background: color-mix(in srgb, var(--agichat-error) 12%, transparent);
+  color: var(--agichat-error);
+
+  border-top: 1px solid
+    color-mix(in srgb, var(--agichat-error) 30%, transparent);
+
+  font-size: 13px;
+}
+
+.agichat-failed {
+  margin-top: 8px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  font-size: 12px;
+  color: var(--agichat-error);
+}
+
+.agichat-retry {
+  border: 1px solid currentColor;
+  border-radius: 8px;
+
+  padding: 4px 8px;
+
+  background: transparent;
+  color: inherit;
+
+  font: inherit;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.agichat-retry:hover {
+  background: color-mix(in srgb, var(--agichat-error) 10%, transparent);
+}
+
+.agichat-retry:focus-visible {
+  outline: 3px solid var(--agichat-error);
+  outline-offset: 2px;
+}
+
 @media (max-width: 480px) {
   .agichat-window {
     inset: 0;
@@ -277,8 +362,37 @@
     border-radius: 0;
   }
 
+  .agichat-header {
+    padding: 16px 18px;
+  }
+
+  .agichat-messages {
+    padding: 14px;
+  }
+
+  .agichat-input-area {
+    padding:
+      12px
+      max(12px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+  }
+
   .agichat-launcher {
-    right: 16px;
-    bottom: 16px;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(16px, env(safe-area-inset-bottom));
+
+    width: 56px;
+    height: 56px;
+  }
+
+  .agichat-input-area input,
+  .agichat-input-area button {
+    min-height: 44px;
+  }
+
+  .agichat-close {
+    min-width: 44px;
+    min-height: 44px;
   }
 }
