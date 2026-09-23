@@ -33,9 +33,7 @@ describe('ChatWindow', () => {
   it('muestra los mensajes', () => {
     render(<ChatWindow {...baseProps} />);
 
-    expect(
-      screen.getByText('Hola, ¿en qué puedo ayudarte?'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Hola, ¿en qué puedo ayudarte?')).toBeInTheDocument();
   });
 
   it('tiene un diálogo accesible', () => {
@@ -47,27 +45,15 @@ describe('ChatWindow', () => {
   it('ejecuta onClose', () => {
     const onClose = vi.fn();
 
-    render(
-      <ChatWindow
-        {...baseProps}
-        onClose={onClose}
-      />,
-    );
+    render(<ChatWindow {...baseProps} onClose={onClose} />);
 
-    fireEvent.click(
-      screen.getByRole('button', { name: /cerrar chat/i }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: /cerrar chat/i }));
 
     expect(onClose).toHaveBeenCalledOnce();
   });
 
   it('muestra el indicador de escritura', () => {
-    render(
-      <ChatWindow
-        {...baseProps}
-        isTyping
-      />,
-    );
+    render(<ChatWindow {...baseProps} isTyping />);
 
     expect(
       screen.getByRole('status', {

@@ -53,20 +53,12 @@ export function ChatWindow({
       <header className="agichat-header">
         <div>
           <h2 id="agichat-title">{title}</h2>
-          <span
-            className="agichat-status"
-            data-state={connectionState}
-          >
+          <span className="agichat-status" data-state={connectionState}>
             {STATUS_LABELS[connectionState]}
           </span>
         </div>
 
-        <button
-          type="button"
-          className="agichat-close"
-          onClick={onClose}
-          aria-label="Cerrar chat"
-        >
+        <button type="button" className="agichat-close" onClick={onClose} aria-label="Cerrar chat">
           ×
         </button>
       </header>
@@ -85,11 +77,7 @@ export function ChatWindow({
         </p>
       )}
 
-      <MessageInput
-        ref={inputRef}
-        onSend={onSend}
-        placeholder={placeholder}
-      />
+      <MessageInput ref={inputRef} onSend={onSend} placeholder={placeholder} />
     </section>
   );
 }

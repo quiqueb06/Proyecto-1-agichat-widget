@@ -26,9 +26,7 @@ describe('MessageInput', () => {
       target: { value: 'Hola AGIChat' },
     });
 
-    fireEvent.click(
-      screen.getByRole('button', { name: /enviar mensaje/i }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: /enviar mensaje/i }));
 
     expect(onSend).toHaveBeenCalledWith('Hola AGIChat');
   });
@@ -42,9 +40,7 @@ describe('MessageInput', () => {
       target: { value: 'Hola' },
     });
 
-    fireEvent.click(
-      screen.getByRole('button', { name: /enviar mensaje/i }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: /enviar mensaje/i }));
 
     expect(input).toHaveValue('');
   });
@@ -52,8 +48,6 @@ describe('MessageInput', () => {
   it('no permite enviar mensajes vacíos', () => {
     render(<MessageInput onSend={() => {}} />);
 
-    expect(
-      screen.getByRole('button', { name: /enviar mensaje/i }),
-    ).toBeDisabled();
+    expect(screen.getByRole('button', { name: /enviar mensaje/i })).toBeDisabled();
   });
 });

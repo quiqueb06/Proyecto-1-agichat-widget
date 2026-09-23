@@ -310,8 +310,7 @@
   background: color-mix(in srgb, var(--agichat-error) 12%, transparent);
   color: var(--agichat-error);
 
-  border-top: 1px solid
-    color-mix(in srgb, var(--agichat-error) 30%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--agichat-error) 30%, transparent);
 
   font-size: 13px;
 }
@@ -371,10 +370,7 @@
   }
 
   .agichat-input-area {
-    padding:
-      12px
-      max(12px, env(safe-area-inset-right))
-      max(12px, env(safe-area-inset-bottom))
+    padding: 12px max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom))
       max(12px, env(safe-area-inset-left));
   }
 

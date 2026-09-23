@@ -25,17 +25,10 @@ export function MessageList({
   }, [messages, isTyping]);
 
   return (
-    <div
-      className="agichat-messages"
-      role="log"
-      aria-live="polite"
-      aria-label="Mensajes del chat"
-    >
+    <div className="agichat-messages" role="log" aria-live="polite" aria-label="Mensajes del chat">
       {messages.length === 0 && welcomeMessage && (
         <div className="agichat-message agichat-message--assistant">
-          <div className="agichat-message__bubble">
-            {welcomeMessage}
-          </div>
+          <div className="agichat-message__bubble">{welcomeMessage}</div>
         </div>
       )}
       {messages.map((message) => {
@@ -69,11 +62,7 @@ export function MessageList({
       })}
 
       {isTyping && messages.at(-1)?.status !== 'streaming' && (
-        <div
-          className="agichat-typing"
-          role="status"
-          aria-label="AGIChat está escribiendo"
-        >
+        <div className="agichat-typing" role="status" aria-label="AGIChat está escribiendo">
           <span />
           <span />
           <span />

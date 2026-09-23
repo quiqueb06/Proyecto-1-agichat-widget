@@ -26,32 +26,32 @@ export function AGIChatView({
   const wasOpen = useRef(open);
 
   useEffect(() => {
-  if (!open) {
-    return;
-  }
-
-  function handleKeyDown(event: KeyboardEvent) {
-    if (event.key === 'Escape') {
-      onClose();
+    if (!open) {
+      return;
     }
-  }
 
-  window.addEventListener('keydown', handleKeyDown);
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    }
 
-  return () => {
-    window.removeEventListener('keydown', handleKeyDown);
-  };
-}, [open, onClose]);
+    window.addEventListener('keydown', handleKeyDown);
 
-useEffect(() => {
-  if (open) {
-    inputRef.current?.focus();
-  } else if (wasOpen.current) {
-    launcherRef.current?.focus();
-  }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onClose]);
 
-  wasOpen.current = open;
-}, [open]);
+  useEffect(() => {
+    if (open) {
+      inputRef.current?.focus();
+    } else if (wasOpen.current) {
+      launcherRef.current?.focus();
+    }
+
+    wasOpen.current = open;
+  }, [open]);
 
   return (
     <div className="agichat-widget">
