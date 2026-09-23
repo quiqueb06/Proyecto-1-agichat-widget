@@ -64,6 +64,17 @@ describe('DefaultChatView', () => {
     );
   });
 
+  it('renderiza Markdown del asistente y conserva el mensaje del usuario como texto', () => {
+    renderView({
+      messages: [
+        msg('assistant', { content: '**respuesta**' }),
+        msg('user', { role: 'user', content: '**pregunta**' }),
+      ],
+    });
+    expect(screen.getByText('respuesta').tagName).toBe('STRONG');
+    expect(screen.getByText('**pregunta**')).toBeInTheDocument();
+  });
+
   it('muestra el mensaje de bienvenida solo sin conversacion', () => {
     const { rerender, props } = renderView({ welcomeMessage: 'Hola, ¿en qué te ayudo?' });
     expect(screen.getByText('Hola, ¿en qué te ayudo?')).toBeInTheDocument();
