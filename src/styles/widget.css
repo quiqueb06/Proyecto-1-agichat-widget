@@ -1,0 +1,284 @@
+.agichat-widget {
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+}
+
+.agichat-launcher {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+
+  width: 58px;
+  height: 58px;
+
+  border: 0;
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--agichat-primary);
+  color: white;
+
+  font-size: 24px;
+
+  cursor: pointer;
+
+  box-shadow: var(--agichat-shadow);
+
+  z-index: 10000;
+
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
+}
+
+.agichat-launcher:hover {
+  background: var(--agichat-primary-hover);
+  transform: translateY(-2px);
+}
+
+.agichat-launcher:focus-visible,
+.agichat-close:focus-visible,
+.agichat-input-area button:focus-visible,
+.agichat-input-area input:focus-visible {
+  outline: 3px solid var(--agichat-primary);
+  outline-offset: 2px;
+}
+
+.agichat-window {
+  position: fixed;
+  right: 24px;
+  bottom: 94px;
+
+  width: 360px;
+  height: 520px;
+
+  display: flex;
+  flex-direction: column;
+
+  background: var(--agichat-background);
+  color: var(--agichat-text);
+
+  border: 1px solid var(--agichat-border);
+  border-radius: var(--agichat-radius);
+
+  overflow: hidden;
+
+  box-shadow: var(--agichat-shadow);
+
+  z-index: 9999;
+}
+
+.agichat-header {
+  padding: 16px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  background: var(--agichat-primary);
+  color: white;
+}
+
+.agichat-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.agichat-status {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.agichat-close {
+  border: 0;
+  background: transparent;
+  color: white;
+
+  font-size: 26px;
+
+  cursor: pointer;
+}
+
+.agichat-messages {
+  flex: 1;
+
+  padding: 16px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  overflow-y: auto;
+
+  background: var(--agichat-surface);
+}
+
+.agichat-message {
+  display: flex;
+}
+
+.agichat-message--user {
+  justify-content: flex-end;
+}
+
+.agichat-message--assistant {
+  justify-content: flex-start;
+}
+
+.agichat-message__bubble {
+  max-width: 80%;
+
+  padding: 10px 14px;
+
+  border-radius: 14px;
+
+  line-height: 1.4;
+
+  overflow-wrap: anywhere;
+}
+
+.agichat-message--user .agichat-message__bubble {
+  background: var(--agichat-user-message);
+  color: var(--agichat-user-message-text);
+
+  border-bottom-right-radius: 4px;
+}
+
+.agichat-message--assistant .agichat-message__bubble {
+  background: var(--agichat-assistant-message);
+  color: var(--agichat-assistant-message-text);
+
+  border-bottom-left-radius: 4px;
+}
+
+.agichat-input-area {
+  padding: 12px;
+
+  display: flex;
+  gap: 8px;
+
+  background: var(--agichat-background);
+
+  border-top: 1px solid var(--agichat-border);
+}
+
+.agichat-input-area input {
+  flex: 1;
+
+  min-width: 0;
+
+  padding: 10px 12px;
+
+  border: 1px solid var(--agichat-border);
+  border-radius: 10px;
+
+  background: var(--agichat-background);
+  color: var(--agichat-text);
+}
+
+.agichat-input-area button {
+  width: 42px;
+
+  border: 0;
+  border-radius: 10px;
+
+  background: var(--agichat-primary);
+  color: white;
+
+  cursor: pointer;
+}
+
+.agichat-input-area button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.agichat-typing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  width: fit-content;
+
+  padding: 10px 14px;
+
+  background: var(--agichat-assistant-message);
+
+  border-radius: 14px;
+}
+
+.agichat-typing span {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: var(--agichat-text-muted);
+
+  animation: agichat-typing 1.2s infinite ease-in-out;
+}
+
+.agichat-typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.agichat-typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes agichat-typing {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+.agichat-sr-only {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+
+  padding: 0;
+  margin: -1px;
+
+  overflow: hidden;
+
+  clip: rect(0, 0, 0, 0);
+
+  white-space: nowrap;
+
+  border: 0;
+}
+
+@media (max-width: 480px) {
+  .agichat-window {
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    border: 0;
+    border-radius: 0;
+  }
+
+  .agichat-launcher {
+    right: 16px;
+    bottom: 16px;
+  }
+}

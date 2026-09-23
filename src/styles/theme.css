@@ -1,0 +1,37 @@
+:root {
+  --agichat-primary: #4f46e5;
+  --agichat-primary-hover: #4338ca;
+
+  --agichat-background: #ffffff;
+  --agichat-surface: #f8fafc;
+
+  --agichat-text: #0f172a;
+  --agichat-text-muted: #64748b;
+
+  --agichat-border: #e2e8f0;
+
+  --agichat-user-message: #4f46e5;
+  --agichat-user-message-text: #ffffff;
+
+  --agichat-assistant-message: #f1f5f9;
+  --agichat-assistant-message-text: #0f172a;
+
+  --agichat-shadow: 0 16px 40px rgb(15 23 42 / 18%);
+
+  --agichat-radius: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --agichat-background: #0f172a;
+    --agichat-surface: #1e293b;
+
+    --agichat-text: #f8fafc;
+    --agichat-text-muted: #94a3b8;
+
+    --agichat-border: #334155;
+
+    --agichat-assistant-message: #334155;
+    --agichat-assistant-message-text: #f8fafc;
+  }
+}

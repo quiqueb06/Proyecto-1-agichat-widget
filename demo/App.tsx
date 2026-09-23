@@ -11,10 +11,13 @@ export function App() {
       <p>
         Versión del SDK: <code>{VERSION}</code>
       </p>
+
       <StatusBadge label="Mock API" />
+
       <p>
         <a href="./embed.html">Ver la demo con el script embebible (sin React)</a>
       </p>
+
       {/* widget conectado al mock: responde con markdown simulado y streaming */}
       <AGIChatWidget
         transport="mock"
