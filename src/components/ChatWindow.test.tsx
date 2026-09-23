@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ChatWindow } from './ChatWindow';
+import { createRef } from 'react';
 
 describe('ChatWindow', () => {
   const messages = [
@@ -13,6 +14,8 @@ describe('ChatWindow', () => {
     },
   ];
 
+  const inputRef = createRef<HTMLInputElement>();
+
   const baseProps = {
     messages,
     title: 'AGIChat',
@@ -23,6 +26,7 @@ describe('ChatWindow', () => {
     onClose: () => {},
     onSend: () => {},
     onRetry: () => {},
+    inputRef,
   };
 
   it('muestra los mensajes', () => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { forwardRef, useState } from 'react';
 import type { FormEvent } from 'react';
 
 type MessageInputProps = {
@@ -7,49 +7,55 @@ type MessageInputProps = {
   disabled?: boolean;
 };
 
-export function MessageInput({
-  onSend,
-  placeholder = 'Escribe un mensaje...',
-  disabled = false,
-}: MessageInputProps) {
-  const [value, setValue] = useState('');
+export const MessageInput = forwardRef<HTMLInputElement, MessageInputProps>(
+  function MessageInput(
+    {
+      onSend,
+      placeholder = 'Escribe un mensaje...',
+      disabled = false,
+    },
+    ref,
+  ) {
+    const [value, setValue] = useState('');
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+    function handleSubmit(event: FormEvent<HTMLFormElement>) {
+      event.preventDefault();
 
-    const message = value.trim();
+      const message = value.trim();
 
-    if (!message) {
-      return;
+      if (!message) {
+        return;
+      }
+
+      onSend(message);
+      setValue('');
     }
 
-    onSend(message);
-    setValue('');
-  }
+    return (
+      <form className="agichat-input-area" onSubmit={handleSubmit}>
+        <label className="agichat-sr-only" htmlFor="agichat-message-input">
+          Escribe un mensaje
+        </label>
 
-  return (
-    <form className="agichat-input-area" onSubmit={handleSubmit}>
-      <label className="agichat-sr-only" htmlFor="agichat-message-input">
-        Escribe un mensaje
-      </label>
+        <input
+          ref={ref}
+          id="agichat-message-input"
+          type="text"
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          placeholder={placeholder}
+          disabled={disabled}
+          autoComplete="off"
+        />
 
-      <input
-        id="agichat-message-input"
-        type="text"
-        value={value}
-        onChange={(event) => setValue(event.target.value)}
-        placeholder={placeholder}
-        disabled={disabled}
-        autoComplete="off"
-      />
-
-      <button
-        type="submit"
-        disabled={disabled || !value.trim()}
-        aria-label="Enviar mensaje"
-      >
-        ➤
-      </button>
-    </form>
-  );
-}
+        <button
+          type="submit"
+          disabled={disabled || !value.trim()}
+          aria-label="Enviar mensaje"
+        >
+          ➤
+        </button>
+      </form>
+    );
+  },
+);

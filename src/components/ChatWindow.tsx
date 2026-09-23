@@ -1,4 +1,5 @@
 import type { ConnectionState, Message } from '../types';
+import type { RefObject } from 'react';
 import { MessageInput } from './MessageInput';
 import { MessageList } from './MessageList';
 
@@ -21,6 +22,8 @@ type ChatWindowProps = {
   onClose: () => void;
   onSend: (message: string) => void;
   onRetry: (id: string) => void;
+  inputRef: RefObject<HTMLInputElement | null>;
+  welcomeMessage?: string;
 };
 
 export function ChatWindow({
@@ -29,11 +32,13 @@ export function ChatWindow({
   title,
   placeholder,
   connectionState,
+  welcomeMessage,
   failedMessageIds,
   error,
   onClose,
   onSend,
   onRetry,
+  inputRef,
 }: ChatWindowProps) {
   return (
     <section
@@ -66,6 +71,7 @@ export function ChatWindow({
       <MessageList
         messages={messages}
         isTyping={isTyping}
+        welcomeMessage={welcomeMessage}
         failedMessageIds={failedMessageIds}
         onRetry={onRetry}
       />
@@ -77,6 +83,7 @@ export function ChatWindow({
       )}
 
       <MessageInput
+        ref={inputRef}
         onSend={onSend}
         placeholder={placeholder}
       />

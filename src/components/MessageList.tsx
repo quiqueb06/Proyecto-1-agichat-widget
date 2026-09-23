@@ -4,6 +4,7 @@ import type { Message } from '../types';
 type MessageListProps = {
   messages: readonly Message[];
   isTyping?: boolean;
+  welcomeMessage?: string;
   failedMessageIds: readonly string[];
   onRetry: (id: string) => void;
 };
@@ -11,6 +12,7 @@ type MessageListProps = {
 export function MessageList({
   messages,
   isTyping = false,
+  welcomeMessage,
   failedMessageIds,
   onRetry,
 }: MessageListProps) {
@@ -29,6 +31,13 @@ export function MessageList({
       aria-live="polite"
       aria-label="Mensajes del chat"
     >
+      {messages.length === 0 && welcomeMessage && (
+        <div className="agichat-message agichat-message--assistant">
+          <div className="agichat-message__bubble">
+            {welcomeMessage}
+          </div>
+        </div>
+      )}
       {messages.map((message) => {
         const failed = failedMessageIds.includes(message.id);
 

@@ -24,7 +24,8 @@ export function App() {
         title="AGIChat"
         welcomeMessage="Hola, ¿en qué te puedo ayudar?"
         persistHistory
-		view={AGIChatView}
+		    view={AGIChatView}
+        theme="auto"
       />
     </main>
   );
