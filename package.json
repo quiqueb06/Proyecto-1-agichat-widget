@@ -10,20 +10,24 @@
   "main": "./dist/agichat.umd.cjs",
   "module": "./dist/agichat.js",
   "types": "./dist/index.d.ts",
+  "unpkg": "./dist/agichat.embed.js",
+  "jsdelivr": "./dist/agichat.embed.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/agichat.js",
       "require": "./dist/agichat.umd.cjs"
-    }
+    },
+    "./embed": "./dist/agichat.embed.js"
   },
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:lib && npm run build:demo",
+    "build": "npm run build:lib && npm run build:embed && npm run build:demo",
     "build:lib": "tsc -p tsconfig.lib.json && vite build --mode lib",
+    "build:embed": "vite build --mode embed",
     "build:demo": "vite build --mode demo",
     "preview": "vite preview --outDir dist-demo",
     "lint": "eslint . --max-warnings 0",

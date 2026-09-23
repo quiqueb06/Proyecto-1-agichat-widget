@@ -13,13 +13,31 @@ export type {
   WebSocketTransportOptions,
 } from './types';
 export { createTransport, MockWebSocketTransport, WebSocketTransport } from './transport';
-export { ChatStore, createChatStore, createLocalStorageHistory, useChat } from './core';
+export {
+  AGIChat,
+  AGIChatWidget,
+  ChatStore,
+  createAGIChat,
+  createChatStore,
+  createLocalStorageHistory,
+  DEFAULT_STYLES,
+  DefaultChatView,
+  useChat,
+} from './core';
 export type {
+  AGIChatEvents,
+  AGIChatInitOptions,
+  AGIChatInstance,
+  AGIChatOptions,
+  AGIChatWidgetProps,
   ChatHistory,
   ChatState,
   ChatStoreEvents,
   ChatStoreOptions,
+  ChatViewProps,
   Listener,
   LocalStorageHistoryOptions,
+  Theme,
   UseChatResult,
+  WidgetUIOptions,
 } from './core';

@@ -14,4 +14,12 @@ describe('API pública del SDK', () => {
     expect(typeof sdk.createChatStore).toBe('function');
     expect(typeof sdk.useChat).toBe('function');
   });
+
+  it('expone el widget y la api global AGIChat', () => {
+    expect(typeof sdk.AGIChatWidget).toBe('function');
+    expect(typeof sdk.createAGIChat).toBe('function');
+    expect(Object.keys(sdk.AGIChat)).toEqual(
+      expect.arrayContaining(['init', 'open', 'close', 'toggle', 'destroy', 'on', 'off', 'send']),
+    );
+  });
 });

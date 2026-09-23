@@ -7,8 +7,6 @@
 
 SDK para agregar un widget de chat agéntico a cualquier sitio web.
 
-> Reemplaza `quiqueb06/Proyecto-1-agichat-widget` en los badges por el nombre real del repositorio.
-
 ## Requisitos
 
 - Node.js 22 (ver `.nvmrc`)
@@ -25,16 +23,17 @@ La página de demo queda en `http://localhost:5173`.
 
 ## Scripts
 
-| Comando                           | Qué hace                                            |
-| --------------------------------- | --------------------------------------------------- |
-| `npm run dev`                     | Servidor de desarrollo con la página demo           |
-| `npm run lint`                    | ESLint (falla con cualquier warning)                |
-| `npm run format` / `format:check` | Formatea / verifica formato con Prettier            |
-| `npm run typecheck`               | Verificación de tipos con TypeScript                |
-| `npm test`                        | Ejecuta los tests                                   |
-| `npm run test:coverage`           | Tests con cobertura (mínimo 80 %)                   |
-| `npm run build`                   | Build del SDK (`dist/`) y de la demo (`dist-demo/`) |
-| `npm run ci`                      | Corre localmente lo mismo que el pipeline de CI     |
+| Comando                           | Qué hace                                                                          |
+| --------------------------------- | --------------------------------------------------------------------------------- |
+| `npm run dev`                     | Servidor de desarrollo con la página demo                                         |
+| `npm run lint`                    | ESLint (falla con cualquier warning)                                              |
+| `npm run format` / `format:check` | Formatea / verifica formato con Prettier                                          |
+| `npm run typecheck`               | Verificación de tipos con TypeScript                                              |
+| `npm test`                        | Ejecuta los tests                                                                 |
+| `npm run test:coverage`           | Tests con cobertura (mínimo 80 %)                                                 |
+| `npm run build`                   | Build del SDK y del script embebible (`dist/`) y de la demo (`dist-demo/`)        |
+| `npm run build:embed`             | Solo el script embebible `dist/agichat.embed.js` (ver [docs/SDK.md](docs/SDK.md)) |
+| `npm run ci`                      | Corre localmente lo mismo que el pipeline de CI                                   |
 
 ## Pipeline
 
@@ -50,6 +49,7 @@ Seguimos **GitHub Flow**. Lee [CONTRIBUTING.md](CONTRIBUTING.md) antes de abrir 
 
 ## Documentación
 
+- [SDK: widget, API AGIChat y hook useChat](docs/SDK.md)
 - [Conexión, Mock API y protocolo WebSocket](docs/TRANSPORT.md)
 - [Arquitectura](docs/ARQUITECTURA.md)
 - [Guía para herramientas agénticas](AGENTS.md)
