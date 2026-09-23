@@ -120,6 +120,10 @@ export function createAGIChat(options: AGIChatInitOptions): AGIChatInstance {
 // el widget que se creo con init() (solo puede haber uno a la vez con la api global)
 let current: AGIChatInstance | null = null;
 
+// listeners de AGIChat.on(...). viven aqui y no en la instancia para que se puedan
+// registrar antes de init (ej. un <script> justo despues del sdk) y sigan despues de re-init
+const globalEvents = createEmitter<AGIChatEvents>();
+
 function instance(): AGIChatInstance {
   if (!current) throw new Error('AGIChat no está inicializado. Llama a AGIChat.init() primero.');
   return current;
@@ -131,6 +135,12 @@ export const AGIChat = {
   init(options: AGIChatInitOptions): AGIChatInstance {
     current?.destroy();
     const chat = createAGIChat(options);
+    // lo que pase en la instancia se reenvia a los listeners globales
+    chat.on('message', (message) => globalEvents.emit('message', message));
+    chat.on('state', (state) => globalEvents.emit('state', state));
+    chat.on('error', (error) => globalEvents.emit('error', error));
+    chat.on('open', () => globalEvents.emit('open', undefined));
+    chat.on('close', () => globalEvents.emit('close', undefined));
     // si alguien hace destroy() directo en la instancia, la api global tambien se entera
     const instanceWithCleanup: AGIChatInstance = {
       ...chat,
@@ -147,13 +157,14 @@ export const AGIChat = {
   toggle: (): void => instance().toggle(),
   isOpen: (): boolean => current?.isOpen() ?? false,
   send: (text: string): Message | null => instance().send(text),
+  // se puede llamar antes de init; el listener sigue registrado aunque se haga destroy e init
   on<K extends keyof AGIChatEvents>(event: K, listener: Listener<AGIChatEvents[K]>): () => void {
-    return instance().on(event, listener);
+    return globalEvents.on(event, listener);
   },
   off<K extends keyof AGIChatEvents>(event: K, listener: Listener<AGIChatEvents[K]>): void {
-    current?.off(event, listener);
+    globalEvents.off(event, listener);
   },
-  // quita el widget. si no habia ninguno no pasa nada
+  // quita el widget (los listeners de on se quedan). si no habia ninguno no pasa nada
   destroy(): void {
     current?.destroy();
     current = null;

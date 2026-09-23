@@ -22,7 +22,16 @@ function init(options: AGIChatInitOptions = { transport: 'mock' }): AGIChatInsta
   return chat;
 }
 
+// los listeners globales sobreviven a destroy, entonces cada test quita los suyos
+const cleanups: (() => void)[] = [];
+const listen: typeof AGIChat.on = (event, listener) => {
+  const stop = AGIChat.on(event, listener);
+  cleanups.push(stop);
+  return stop;
+};
+
 afterEach(() => {
+  cleanups.splice(0).forEach((stop) => stop());
   act(() => AGIChat.destroy());
   vi.useRealTimers();
   document.body.innerHTML = '';
@@ -30,6 +39,22 @@ afterEach(() => {
 });
 
 describe('AGIChat (api global)', () => {
+  it('on funciona antes de init y sigue escuchando despues de destroy e init', () => {
+    const opened = vi.fn();
+    // como en un <script> que corre antes de que el widget exista
+    listen('open', opened);
+    init({ transport: 'mock', defaultOpen: false });
+    act(() => AGIChat.open());
+    act(() => AGIChat.destroy());
+    init();
+    act(() => AGIChat.open());
+    expect(opened).toHaveBeenCalledTimes(2);
+    AGIChat.off('open', opened);
+    act(() => AGIChat.close());
+    act(() => AGIChat.open());
+    expect(opened).toHaveBeenCalledTimes(2);
+  });
+
   it('monta el widget dentro de un shadow dom en el body', () => {
     init({ transport: 'mock', title: 'Soporte' });
     expect(hosts()).toHaveLength(1);
@@ -46,8 +71,8 @@ describe('AGIChat (api global)', () => {
     init();
     const opened = vi.fn();
     const closed = vi.fn();
-    AGIChat.on('open', opened);
-    AGIChat.on('close', closed);
+    listen('open', opened);
+    listen('close', closed);
 
     act(() => AGIChat.open());
     expect(AGIChat.isOpen()).toBe(true);
@@ -70,8 +95,8 @@ describe('AGIChat (api global)', () => {
     const user = userEvent.setup();
     const opened = vi.fn();
     const closed = vi.fn();
-    AGIChat.on('open', opened);
-    AGIChat.on('close', closed);
+    listen('open', opened);
+    listen('close', closed);
     await user.click(inWidget().getByRole('button', { name: 'Abrir chat' }));
     expect(opened).toHaveBeenCalledTimes(1);
     expect(AGIChat.isOpen()).toBe(true);
@@ -88,8 +113,8 @@ describe('AGIChat (api global)', () => {
     });
     const messages: Message[] = [];
     const states: string[] = [];
-    AGIChat.on('message', (m) => messages.push(m));
-    AGIChat.on('state', (s) => states.push(s));
+    listen('message', (m) => messages.push(m));
+    listen('state', (s) => states.push(s));
 
     await act(() => vi.advanceTimersByTimeAsync(10));
     expect(states).toContain('connected');
@@ -107,7 +132,7 @@ describe('AGIChat (api global)', () => {
   it("on('error') avisa cuando no se puede enviar y off deja de escuchar", () => {
     init();
     const errors = vi.fn();
-    const stop = AGIChat.on('error', errors);
+    const stop = listen('error', errors);
     // todavia no conecta (el mock tarda), entonces el envio falla
     act(() => {
       AGIChat.send('Hola');
@@ -142,8 +167,6 @@ describe('AGIChat (api global)', () => {
     expect(() => AGIChat.close()).toThrow('AGIChat no está inicializado');
     expect(() => AGIChat.toggle()).toThrow('AGIChat no está inicializado');
     expect(() => AGIChat.send('x')).toThrow('AGIChat no está inicializado');
-    expect(() => AGIChat.on('message', vi.fn())).toThrow('AGIChat no está inicializado');
-    expect(() => AGIChat.off('message', vi.fn())).not.toThrow();
     // la instancia vieja ya no hace nada
     chat.open();
     chat.destroy();
@@ -184,6 +207,22 @@ describe('createAGIChat', () => {
       b.destroy();
     });
     expect(hosts()).toHaveLength(0);
+  });
+
+  it('cada instancia tiene sus propios eventos con on y off', () => {
+    let chat!: AGIChatInstance;
+    act(() => {
+      chat = createAGIChat({ transport: 'mock' });
+    });
+    const opened = vi.fn();
+    const stop = chat.on('open', opened);
+    act(() => chat.open());
+    chat.off('open', opened);
+    stop();
+    act(() => chat.toggle());
+    act(() => chat.toggle());
+    expect(opened).toHaveBeenCalledTimes(1);
+    act(() => chat.destroy());
   });
 
   it('falla con un mensaje claro si el selector no existe', () => {
