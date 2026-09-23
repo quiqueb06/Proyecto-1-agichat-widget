@@ -256,3 +256,87 @@ describe('ChatStore', () => {
     }
   });
 });
+
+describe('ChatStore con historial', () => {
+  // historial en memoria para ver que se guarda y cuando
+  function memoryHistory(initial: Message[] = []) {
+    let saved = initial;
+    return {
+      load: vi.fn(() => saved),
+      save: vi.fn((messages: readonly Message[]) => {
+        saved = [...messages];
+      }),
+      clear: vi.fn(() => {
+        saved = [];
+      }),
+      get saved() {
+        return saved;
+      },
+    };
+  }
+
+  const old: Message = {
+    id: 'old',
+    role: 'assistant',
+    content: 'de antes',
+    createdAt: '2026-09-21T00:00:00.000Z',
+    status: 'complete',
+  };
+
+  it('arranca con los mensajes guardados', () => {
+    const history = memoryHistory([old]);
+    const store = new ChatStore(new FakeTransport(), { history });
+    expect(store.getSnapshot().messages).toEqual([old]);
+  });
+
+  it('guarda al enviar y al completar una respuesta, no en cada fragmento', () => {
+    const history = memoryHistory();
+    const transport = new FakeTransport();
+    const store = new ChatStore(transport, { history });
+    store.connect();
+    const sent = store.send('Hola')!;
+    expect(history.save).toHaveBeenCalledTimes(1);
+    transport.receive({ id: 'a1', content: 'Ho', status: 'streaming' });
+    transport.receive({ id: 'a1', content: 'Hol', status: 'streaming' });
+    expect(history.save).toHaveBeenCalledTimes(1);
+    transport.receive({ id: 'a1', content: 'Hola' });
+    expect(history.save).toHaveBeenCalledTimes(2);
+    expect(history.saved.map((m) => m.id)).toEqual([sent.id, 'a1']);
+  });
+
+  it('no guarda mensajes fallidos hasta que el reintento funciona', () => {
+    const history = memoryHistory();
+    const transport = new FakeTransport();
+    const store = new ChatStore(transport, { history });
+    store.connect();
+    store.send('primero');
+    transport.failNextSend = true;
+    const failed = store.send('Hola')!;
+    transport.receive({ id: 'a1' });
+    expect(history.saved.map((m) => m.id)).not.toContain(failed.id);
+    store.retry(failed.id);
+    expect(history.saved.map((m) => m.id)).toContain(failed.id);
+  });
+
+  it('guarda las respuestas cortadas por una desconexion', () => {
+    const history = memoryHistory();
+    const transport = new FakeTransport();
+    const store = new ChatStore(transport, { history });
+    store.connect();
+    transport.receive({ id: 'a1', content: 'Parcial', status: 'streaming' });
+    transport.changeState('reconnecting');
+    expect(history.saved).toEqual([expect.objectContaining({ id: 'a1', status: 'complete' })]);
+    history.save.mockClear();
+    // sin nada en streaming no hace falta volver a guardar
+    transport.changeState('error');
+    expect(history.save).not.toHaveBeenCalled();
+  });
+
+  it('clear tambien borra el historial guardado', () => {
+    const history = memoryHistory([old]);
+    const store = new ChatStore(new FakeTransport(), { history });
+    store.clear();
+    expect(history.clear).toHaveBeenCalledTimes(1);
+    expect(store.getSnapshot().messages).toEqual([]);
+  });
+});

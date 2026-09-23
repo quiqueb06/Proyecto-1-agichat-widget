@@ -1,6 +1,7 @@
 import type { ChatTransport, ConnectionState, Message, TransportEvent } from '../types';
 import { createEmitter } from './emitter';
 import type { Listener } from './emitter';
+import type { ChatHistory } from './history';
 
 // todo lo que la ui necesita saber del chat en un solo objeto
 export interface ChatState {
@@ -24,6 +25,11 @@ export type ChatStoreEvents = {
   error: Error;
 };
 
+export interface ChatStoreOptions {
+  // opcional: donde guardar el historial (ej. createLocalStorageHistory())
+  history?: ChatHistory;
+}
+
 // estados en los que ya no van a llegar las respuestas que estaban en camino
 const INTERRUPTED_STATES: readonly ConnectionState[] = ['disconnected', 'reconnecting', 'error'];
 
@@ -42,10 +48,16 @@ export class ChatStore {
   // listeners de eventos (message, state, error)
   private readonly events = createEmitter<ChatStoreEvents>();
   private readonly unsubscribeTransport: () => void;
+  private readonly history?: ChatHistory;
 
-  constructor(private readonly transport: ChatTransport) {
+  constructor(
+    private readonly transport: ChatTransport,
+    options: ChatStoreOptions = {},
+  ) {
+    this.history = options.history;
     this.state = {
-      messages: [],
+      // si hay historial guardado se arranca con esos mensajes
+      messages: this.history?.load() ?? [],
       connectionState: transport.state,
       isTyping: false,
       failedMessageIds: [],
@@ -118,10 +130,11 @@ export class ChatStore {
     return this.deliver(message);
   }
 
-  // borra todo el historial
+  // borra todo el historial (tambien el guardado)
   clear(): void {
     this.pendingResponses = 0;
     this.update({ messages: [], failedMessageIds: [], isTyping: false, error: null });
+    this.history?.clear();
   }
 
   // suelta el transporte y todos los listeners. llamarlo dos veces no hace nada
@@ -146,8 +159,17 @@ export class ChatStore {
     // se mando bien: ahora esperamos una respuesta mas
     this.pendingResponses += 1;
     this.update({ isTyping: true, error: null });
+    this.persist();
     this.events.emit('message', message);
     return true;
+  }
+
+  // guarda el historial (si hay). los mensajes que fallaron no se guardan,
+  // porque al recargar ya no se podrian reintentar
+  private persist(): void {
+    if (!this.history) return;
+    const { messages, failedMessageIds } = this.state;
+    this.history.save(messages.filter((m) => !failedMessageIds.includes(m.id)));
   }
 
   // reparte cada evento del transporte a su funcion
@@ -173,14 +195,16 @@ export class ChatStore {
       // si no se quedarian "en streaming" para siempre en la ui
       this.pendingResponses = 0;
       const { messages } = this.state;
+      const hadStreaming = messages.some((m) => m.status === 'streaming');
       this.update({
         connectionState,
         isTyping: false,
         // si no habia nada en streaming dejamos el mismo arreglo (evita renders de mas)
-        messages: messages.some((m) => m.status === 'streaming')
+        messages: hadStreaming
           ? messages.map((m) => (m.status === 'streaming' ? { ...m, status: 'complete' } : m))
           : messages,
       });
+      if (hadStreaming) this.persist();
     } else {
       // al conectar se limpia el error anterior
       this.update(
@@ -207,7 +231,11 @@ export class ChatStore {
       this.pendingResponses -= 1;
     }
     this.update({ messages, isTyping: this.pendingResponses > 0 });
-    if (completed) this.events.emit('message', message);
+    // se guarda solo cuando termina un mensaje, no en cada pedacito del streaming
+    if (completed) {
+      this.persist();
+      this.events.emit('message', message);
+    }
   }
 
   // crea un estado nuevo con los cambios y avisa a los listeners

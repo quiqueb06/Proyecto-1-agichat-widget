@@ -2,7 +2,7 @@ import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { createTransport } from '../transport';
 import type { Message, WidgetConfig } from '../types';
 import { ChatStore } from './ChatStore';
-import type { ChatState } from './ChatStore';
+import type { ChatState, ChatStoreOptions } from './ChatStore';
 
 // lo que devuelve el hook: el estado del chat + las acciones
 export interface UseChatResult extends ChatState {
@@ -12,8 +12,8 @@ export interface UseChatResult extends ChatState {
 }
 
 // atajo para crear un store a partir de la config (mock o websocket real)
-export function createChatStore(config: WidgetConfig): ChatStore {
-  return new ChatStore(createTransport(config));
+export function createChatStore(config: WidgetConfig, options?: ChatStoreOptions): ChatStore {
+  return new ChatStore(createTransport(config), options);
 }
 
 // hook para usar un ChatStore desde react.
