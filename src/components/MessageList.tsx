@@ -1,19 +1,18 @@
 import { useEffect, useRef } from 'react';
-
-type DemoMessage = {
-  id: string;
-  sender: 'user' | 'assistant';
-  content: string;
-};
+import type { Message } from '../types';
 
 type MessageListProps = {
-  messages: DemoMessage[];
+  messages: readonly Message[];
   isTyping?: boolean;
+  failedMessageIds: readonly string[];
+  onRetry: (id: string) => void;
 };
 
 export function MessageList({
   messages,
   isTyping = false,
+  failedMessageIds,
+  onRetry,
 }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -30,18 +29,37 @@ export function MessageList({
       aria-live="polite"
       aria-label="Mensajes del chat"
     >
-      {messages.map((message) => (
-        <div
-          key={message.id}
-          className={`agichat-message agichat-message--${message.sender}`}
-        >
-          <div className="agichat-message__bubble">
-            {message.content}
-          </div>
-        </div>
-      ))}
+      {messages.map((message) => {
+        const failed = failedMessageIds.includes(message.id);
 
-      {isTyping && (
+        return (
+          <div
+            key={message.id}
+            className={`agichat-message agichat-message--${message.role}`}
+            aria-busy={message.status === 'streaming'}
+          >
+            <div className="agichat-message__bubble">
+              {message.content}
+
+              {failed && (
+                <div className="agichat-failed">
+                  <span>No se envió.</span>
+
+                  <button
+                    type="button"
+                    className="agichat-retry"
+                    onClick={() => onRetry(message.id)}
+                  >
+                    Reintentar
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+
+      {isTyping && messages.at(-1)?.status !== 'streaming' && (
         <div
           className="agichat-typing"
           role="status"

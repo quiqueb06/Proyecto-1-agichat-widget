@@ -3,11 +3,13 @@ import type { FormEvent } from 'react';
 
 type MessageInputProps = {
   onSend: (message: string) => void;
+  placeholder?: string;
   disabled?: boolean;
 };
 
 export function MessageInput({
   onSend,
+  placeholder = 'Escribe un mensaje...',
   disabled = false,
 }: MessageInputProps) {
   const [value, setValue] = useState('');
@@ -36,7 +38,7 @@ export function MessageInput({
         type="text"
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        placeholder="Escribe un mensaje..."
+        placeholder={placeholder}
         disabled={disabled}
         autoComplete="off"
       />

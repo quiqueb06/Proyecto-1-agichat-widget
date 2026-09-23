@@ -9,6 +9,7 @@ export { ChatLauncher } from './components/ChatLauncher';
 export { ChatWindow } from './components/ChatWindow';
 export { MessageList } from './components/MessageList';
 export { MessageInput } from './components/MessageInput';
+export { AGIChatView } from './components/AGIChatView';
 
 export type {
   Message,

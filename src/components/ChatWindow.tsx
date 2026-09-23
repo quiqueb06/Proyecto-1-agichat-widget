@@ -1,24 +1,39 @@
+import type { ConnectionState, Message } from '../types';
 import { MessageInput } from './MessageInput';
 import { MessageList } from './MessageList';
 
-type DemoMessage = {
-  id: string;
-  sender: 'user' | 'assistant';
-  content: string;
+const STATUS_LABELS: Record<ConnectionState, string> = {
+  disconnected: 'Desconectado',
+  connecting: 'Conectando…',
+  connected: 'En línea',
+  reconnecting: 'Reconectando…',
+  error: 'Sin conexión',
 };
 
 type ChatWindowProps = {
-  messages: DemoMessage[];
+  messages: readonly Message[];
   isTyping?: boolean;
+  title: string;
+  placeholder: string;
+  connectionState: ConnectionState;
+  failedMessageIds: readonly string[];
+  error: Error | null;
   onClose: () => void;
   onSend: (message: string) => void;
+  onRetry: (id: string) => void;
 };
 
 export function ChatWindow({
   messages,
   isTyping = false,
+  title,
+  placeholder,
+  connectionState,
+  failedMessageIds,
+  error,
   onClose,
   onSend,
+  onRetry,
 }: ChatWindowProps) {
   return (
     <section
@@ -29,8 +44,13 @@ export function ChatWindow({
     >
       <header className="agichat-header">
         <div>
-          <h2 id="agichat-title">AGIChat</h2>
-          <span className="agichat-status">En línea</span>
+          <h2 id="agichat-title">{title}</h2>
+          <span
+            className="agichat-status"
+            data-state={connectionState}
+          >
+            {STATUS_LABELS[connectionState]}
+          </span>
         </div>
 
         <button
@@ -43,9 +63,23 @@ export function ChatWindow({
         </button>
       </header>
 
-      <MessageList messages={messages} isTyping={isTyping} />
+      <MessageList
+        messages={messages}
+        isTyping={isTyping}
+        failedMessageIds={failedMessageIds}
+        onRetry={onRetry}
+      />
 
-      <MessageInput onSend={onSend} />
+      {error && (
+        <p className="agichat-error" role="alert">
+          {error.message}
+        </p>
+      )}
+
+      <MessageInput
+        onSend={onSend}
+        placeholder={placeholder}
+      />
     </section>
   );
 }

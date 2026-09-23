@@ -6,19 +6,27 @@ describe('ChatWindow', () => {
   const messages = [
     {
       id: '1',
-      sender: 'assistant' as const,
+      role: 'assistant' as const,
       content: 'Hola, ¿en qué puedo ayudarte?',
+      createdAt: new Date().toISOString(),
+      status: 'complete' as const,
     },
   ];
 
+  const baseProps = {
+    messages,
+    title: 'AGIChat',
+    placeholder: 'Escribe un mensaje...',
+    connectionState: 'connected' as const,
+    failedMessageIds: [] as readonly string[],
+    error: null,
+    onClose: () => {},
+    onSend: () => {},
+    onRetry: () => {},
+  };
+
   it('muestra los mensajes', () => {
-    render(
-      <ChatWindow
-        messages={messages}
-        onClose={() => {}}
-        onSend={() => {}}
-      />,
-    );
+    render(<ChatWindow {...baseProps} />);
 
     expect(
       screen.getByText('Hola, ¿en qué puedo ayudarte?'),
@@ -26,13 +34,7 @@ describe('ChatWindow', () => {
   });
 
   it('tiene un diálogo accesible', () => {
-    render(
-      <ChatWindow
-        messages={messages}
-        onClose={() => {}}
-        onSend={() => {}}
-      />,
-    );
+    render(<ChatWindow {...baseProps} />);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
@@ -42,9 +44,8 @@ describe('ChatWindow', () => {
 
     render(
       <ChatWindow
-        messages={messages}
+        {...baseProps}
         onClose={onClose}
-        onSend={() => {}}
       />,
     );
 
@@ -58,10 +59,8 @@ describe('ChatWindow', () => {
   it('muestra el indicador de escritura', () => {
     render(
       <ChatWindow
-        messages={messages}
+        {...baseProps}
         isTyping
-        onClose={() => {}}
-        onSend={() => {}}
       />,
     );
 

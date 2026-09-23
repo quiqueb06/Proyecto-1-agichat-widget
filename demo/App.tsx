@@ -1,4 +1,4 @@
-import { AGIChatWidget, StatusBadge, VERSION } from '../src';
+import { AGIChatView, AGIChatWidget, StatusBadge, VERSION } from '../src';
 
 /**
  * Página de demostración: simula el sitio de un cliente que integra el widget.
@@ -24,6 +24,7 @@ export function App() {
         title="AGIChat"
         welcomeMessage="Hola, ¿en qué te puedo ayudar?"
         persistHistory
+		view={AGIChatView}
       />
     </main>
   );
