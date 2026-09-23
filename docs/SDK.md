@@ -56,6 +56,50 @@ Props adicionales del componente:
 | `view`                  | Componente de vista propio que recibe `ChatViewProps`.                  |
 | `styles`                | CSS propio en lugar de los estilos por defecto (`''` = sin estilos).    |
 
+## Script embebible (sin instalar nada)
+
+Para sitios sin React ni bundler existe `dist/agichat.embed.js`: un solo archivo UMD que
+ya incluye React (unos 75 kB con gzip). Se agrega con una etiqueta y se configura con
+atributos `data-*`. El archivo viene en el paquete que publica el workflow de release (o
+se genera con `npm run build:embed`) y el sitio lo sirve como cualquier otro `.js`:
+
+```html
+<script
+  src="/js/agichat.embed.js"
+  data-transport="mock"
+  data-title="Soporte"
+  data-welcome-message="Hola, ¿en qué te puedo ayudar?"
+></script>
+<script>
+  AGIChat.on('message', (message) => console.log(message.role, message.content));
+</script>
+```
+
+Con `data-transport` el widget se monta solo. Sin ese atributo no se monta nada y el sitio
+llama `AGIChat.init({...})` cuando quiera. Todo queda en `window.AGIChat` con la misma API
+de la sección siguiente.
+
+| Atributo               | Equivale a       | Ejemplo                                 |
+| ---------------------- | ---------------- | --------------------------------------- |
+| `data-transport`       | `transport`      | `mock` o `websocket`                    |
+| `data-endpoint`        | `endpoint`       | `wss://ejemplo.com/chat`                |
+| `data-title`           | `title`          | `Soporte`                               |
+| `data-placeholder`     | `placeholder`    | `Escribe aquí`                          |
+| `data-welcome-message` | `welcomeMessage` | `Hola`                                  |
+| `data-theme`           | `theme`          | `light`, `dark` o `auto`                |
+| `data-open`            | `defaultOpen`    | presente o `true` para arrancar abierto |
+| `data-persist-history` | `persistHistory` | presente, `true`, `false` o una llave   |
+| `data-target`          | `target`         | `#contenedor-del-chat`                  |
+
+Si la configuración es inválida (por ejemplo `websocket` sin `data-endpoint`), el error se
+muestra en la consola y la página del cliente sigue funcionando. Si el script está en el
+`<body>` y no tiene `data-target`, el widget se monta en ese momento; si no, espera a que
+termine de cargar el HTML. `AGIChat.on` se puede usar desde cualquier script después del
+SDK, aunque el widget todavía no esté montado.
+
+El build se genera con `npm run build:embed` (también lo hace `npm run build`). La demo
+publicada incluye `embed.html`, una página sin React que usa este script.
+
 ## Integración sin React: `AGIChat.init()`
 
 ```ts
@@ -228,3 +272,13 @@ const { AGIChat } = await import('/src/index.ts');
 AGIChat.init({ transport: 'mock', title: 'Prueba', defaultOpen: true });
 AGIChat.on('message', (m) => console.log(m.role, m.content));
 ```
+
+Para probar el script embebible real:
+
+```bash
+npm run build:embed
+npm run dev
+```
+
+y abrir `http://localhost:5173/embed.html`. Con `npm run build` y `npm run preview` se
+prueba igual que en GitHub Pages.

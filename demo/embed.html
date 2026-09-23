@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AGIChat · Demo con script embebible</title>
+    <!-- esta pagina simula el sitio de un cliente que no usa react ni un bundler:
+         solo agrega el <script> del sdk. sus estilos no afectan al widget (shadow dom) -->
+    <style>
+      :root {
+        font-family: Georgia, serif;
+        color: #1f2937;
+        background: #fffbeb;
+      }
+      main {
+        max-width: 720px;
+        margin: 4rem auto;
+        padding: 0 1rem;
+      }
+      button {
+        margin: 0 0.5rem 0.5rem 0;
+        padding: 0.5rem 1rem;
+        border: 2px solid #92400e;
+        background: #fde68a;
+        font: inherit;
+        cursor: pointer;
+      }
+      #eventos {
+        min-height: 6rem;
+        padding: 1rem;
+        background: #fff;
+        border: 1px dashed #92400e;
+        font-family: monospace;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Tienda de ejemplo</h1>
+      <p>
+        Esta página no usa React: el chat se agrega con una sola etiqueta
+        <code>&lt;script&gt;</code> y se configura con atributos <code>data-*</code>.
+      </p>
+      <p>
+        <button type="button" id="abrir">AGIChat.open()</button>
+        <button type="button" id="cerrar">AGIChat.close()</button>
+        <button type="button" id="enviar">AGIChat.send('Hola')</button>
+      </p>
+      <h2>Eventos</h2>
+      <div id="eventos" aria-live="polite"></div>
+      <p><a href="./">Ver la demo con el componente de React</a></p>
+    </main>
+
+    <!-- el sdk: se monta solo gracias a data-transport -->
+    <script
+      src="./agichat.embed.js"
+      data-transport="mock"
+      data-title="Soporte de la tienda"
+      data-welcome-message="Hola, ¿en qué te puedo ayudar?"
+      data-persist-history="agichat:demo-embed"
+    ></script>
+
+    <!-- codigo del cliente usando la api global window.AGIChat -->
+    <script>
+      const eventos = document.getElementById('eventos');
+      function registrar(texto) {
+        eventos.textContent = texto + '\n' + eventos.textContent;
+      }
+      AGIChat.on('open', () => registrar('open'));
+      AGIChat.on('close', () => registrar('close'));
+      AGIChat.on('state', (estado) => registrar('state: ' + estado));
+      AGIChat.on('message', (m) =>
+        registrar('message (' + m.role + '): ' + m.content.slice(0, 40)),
+      );
+      AGIChat.on('error', (e) => registrar('error: ' + e.message));
+      document.getElementById('abrir').onclick = () => AGIChat.open();
+      document.getElementById('cerrar').onclick = () => AGIChat.close();
+      document.getElementById('enviar').onclick = () => AGIChat.send('Hola');
+    </script>
+  </body>
+</html>
