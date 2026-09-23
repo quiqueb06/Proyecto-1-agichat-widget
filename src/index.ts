@@ -14,8 +14,10 @@ export type {
 } from './types';
 export { createTransport, MockWebSocketTransport, WebSocketTransport } from './transport';
 export {
+  AGIChat,
   AGIChatWidget,
   ChatStore,
+  createAGIChat,
   createChatStore,
   createLocalStorageHistory,
   DEFAULT_STYLES,
@@ -23,6 +25,9 @@ export {
   useChat,
 } from './core';
 export type {
+  AGIChatEvents,
+  AGIChatInitOptions,
+  AGIChatInstance,
   AGIChatOptions,
   AGIChatWidgetProps,
   ChatHistory,

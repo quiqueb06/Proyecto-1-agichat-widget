@@ -13,3 +13,5 @@ export { DefaultChatView } from './DefaultChatView';
 export { DEFAULT_STYLES } from './defaultStyles';
 export { createStoreFromOptions } from './options';
 export type { AGIChatOptions, ChatViewProps, Theme, WidgetUIOptions } from './types';
+export { AGIChat, createAGIChat } from './AGIChat';
+export type { AGIChatEvents, AGIChatInitOptions, AGIChatInstance } from './AGIChat';
