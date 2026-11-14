@@ -1,5 +1,5 @@
-// punto de entrada del servidor del agente (el gateway llega en las siguientes partes).
-// por ahora exporta los contratos para que la persona 4 programe contra ellos
+// todo lo publico del servidor del agente sale por aqui (el arranque real esta en main.ts).
+// la persona 4 importa de aqui los contratos (AgentRunner, frames) para programar los agentes
 export const SERVICE_NAME = 'agichat-agent-server';
 
 export { messageSchema } from './protocol/message.js';
@@ -14,3 +14,11 @@ export type { AgentAction, ClientFrame, ParseResult, ServerFrame } from './proto
 export type { AgentEvent, AgentRequest, AgentRunner } from './agent/types.js';
 export { EchoAgent } from './agent/EchoAgent.js';
 export type { EchoAgentOptions } from './agent/EchoAgent.js';
+export { loadConfig } from './config.js';
+export type { GatewayConfig } from './config.js';
+export { createGateway } from './gateway/server.js';
+export type { Gateway, GatewayOptions } from './gateway/server.js';
+export { InMemorySessionStore } from './session/SessionStore.js';
+export type { InMemorySessionStoreOptions, SessionStore } from './session/SessionStore.js';
+export { createLogger, silentLogger } from './logger.js';
+export type { LogFields, Logger, LogLevel } from './logger.js';
