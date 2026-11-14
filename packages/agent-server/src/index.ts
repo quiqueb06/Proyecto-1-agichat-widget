@@ -22,3 +22,7 @@ export { InMemorySessionStore } from './session/SessionStore.js';
 export type { InMemorySessionStoreOptions, SessionStore } from './session/SessionStore.js';
 export { createLogger, silentLogger } from './logger.js';
 export type { LogFields, Logger, LogLevel } from './logger.js';
+export { isOriginAllowed } from './gateway/server.js';
+export { RateLimiter } from './gateway/RateLimiter.js';
+export type { RateLimiterOptions } from './gateway/RateLimiter.js';
+export type { ConnectionLimits } from './gateway/connection.js';

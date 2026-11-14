@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
+import type { ClientOptions } from 'ws';
 import { EchoAgent } from '../agent/EchoAgent.js';
 import type { AgentRunner } from '../agent/types.js';
 import { loadConfig } from '../config.js';
@@ -8,7 +9,7 @@ import { silentLogger } from '../logger.js';
 import type { ServerFrame } from '../protocol/frames.js';
 import { InMemorySessionStore } from '../session/SessionStore.js';
 import type { SessionStore } from '../session/SessionStore.js';
-import { createGateway } from './server.js';
+import { createGateway, isOriginAllowed } from './server.js';
 import type { Gateway } from './server.js';
 
 // gateways abiertos en cada test, para cerrarlos siempre al final
@@ -40,8 +41,8 @@ async function start(
 }
 
 // cliente websocket de prueba que guarda todos los frames que le llegan
-async function connect(url: string) {
-  const socket = new WebSocket(url);
+async function connect(url: string, options?: ClientOptions) {
+  const socket = new WebSocket(url, options);
   const frames: ServerFrame[] = [];
   socket.on('message', (data) => frames.push(JSON.parse(data.toString()) as ServerFrame));
   await new Promise((resolve, reject) => {
@@ -186,5 +187,96 @@ describe('createGateway', () => {
       vi.useRealTimers();
       sweep.mockRestore();
     }
+  });
+});
+
+// intenta abrir un websocket que el servidor deberia rechazar y devuelve el codigo http
+function refusedStatus(url: string, options?: ClientOptions) {
+  return new Promise<number>((resolve, reject) => {
+    const socket = new WebSocket(url, options);
+    socket.on('unexpected-response', (req, res) => {
+      resolve(res.statusCode ?? 0);
+      req.destroy();
+    });
+    socket.on('open', () => reject(new Error('el servidor acepto la conexion')));
+    socket.on('error', () => {});
+  });
+}
+
+describe('endurecimiento del gateway', () => {
+  it('solo deja conectarse a las paginas permitidas (Origin)', async () => {
+    const { ws } = await start(undefined, {
+      config: { allowedOrigins: ['https://quiqueb06.github.io'] },
+    });
+    expect(await refusedStatus(ws, { origin: 'https://pagina-mala.com' })).toBe(403);
+    const ok = await connect(ws, { origin: 'https://quiqueb06.github.io' });
+    expect(ok.socket.readyState).toBe(WebSocket.OPEN);
+  });
+
+  it('rechaza rutas que no son la del websocket con 404', async () => {
+    const { base } = await start();
+    expect(await refusedStatus(`${base.replace('http', 'ws')}/otra`)).toBe(404);
+  });
+
+  it('con el servidor lleno rechaza conexiones nuevas con 503', async () => {
+    const { ws, gateway } = await start(undefined, { config: { maxConnections: 1 } });
+    const first = await connect(ws);
+    expect(await refusedStatus(ws)).toBe(503);
+    // cuando se libera un lugar, vuelve a aceptar
+    first.socket.close();
+    await vi.waitFor(() => expect(gateway.connections).toBe(0));
+    const second = await connect(ws);
+    expect(second.socket.readyState).toBe(WebSocket.OPEN);
+  });
+
+  it('corta la conexion si mandan un frame gigante (1009)', async () => {
+    const { ws } = await start(undefined, { config: { maxPayloadBytes: 1024 } });
+    const client = await connect(ws);
+    const closed = new Promise<number>((resolve) => client.socket.once('close', resolve));
+    client.socket.send('x'.repeat(2048));
+    expect(await closed).toBe(1009);
+  });
+
+  it('el heartbeat corta a los clientes que no contestan y deja a los vivos', async () => {
+    const { ws, gateway } = await start(undefined, { config: { heartbeatMs: 30 } });
+    const vivo = await connect(ws);
+    // autoPong false = el cliente ignora los ping, como si se le hubiera ido el internet
+    const muerto = await connect(ws, { autoPong: false });
+    const closed = new Promise<void>((resolve) => muerto.socket.once('close', () => resolve()));
+    await closed;
+    // el cliente se entera del corte un poquito antes que el contador del servidor
+    await vi.waitFor(() => expect(gateway.connections).toBe(1));
+    expect(vivo.socket.readyState).toBe(WebSocket.OPEN);
+  });
+
+  it('aplica el rate limit de la config a cada conexion', async () => {
+    const { ws } = await start(undefined, {
+      config: { rateLimit: { messages: 1, windowMs: 60_000 } },
+    });
+    const client = await connect(ws);
+    client.send('uno');
+    client.send('dos');
+    await vi.waitFor(() =>
+      expect(client.frames).toContainEqual({
+        type: 'error',
+        error: 'Límite de mensajes alcanzado.',
+      }),
+    );
+  });
+});
+
+describe('isOriginAllowed', () => {
+  const allowed = ['http://localhost:5173'];
+
+  it('acepta las paginas de la lista y rechaza las demas', () => {
+    expect(isOriginAllowed('http://localhost:5173', allowed)).toBe(true);
+    expect(isOriginAllowed('http://localhost:5174', allowed)).toBe(false);
+    expect(isOriginAllowed('null', allowed)).toBe(false);
+  });
+
+  it('"*" acepta cualquiera y sin Origin (no navegador) tambien pasa', () => {
+    expect(isOriginAllowed('https://lo-que-sea.com', ['*'])).toBe(true);
+    expect(isOriginAllowed(undefined, allowed)).toBe(true);
+    expect(isOriginAllowed('http://localhost:5173', [])).toBe(false);
   });
 });

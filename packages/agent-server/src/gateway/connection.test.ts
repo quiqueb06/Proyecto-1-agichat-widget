@@ -9,7 +9,17 @@ import type { ServerFrame } from '../protocol/frames.js';
 import type { Message } from '../protocol/message.js';
 import { InMemorySessionStore } from '../session/SessionStore.js';
 import type { SessionStore } from '../session/SessionStore.js';
-import { EMPTY_REPLY, ERROR_REPLY, GatewayConnection, INTERRUPTED_NOTE } from './connection.js';
+import {
+  BLANK_REPLY,
+  BUSY_REPLY,
+  EMPTY_REPLY,
+  ERROR_REPLY,
+  GatewayConnection,
+  INTERRUPTED_NOTE,
+  RATE_LIMIT_REPLY,
+  TOO_LONG_REPLY,
+} from './connection.js';
+import type { ConnectionLimits } from './connection.js';
 
 // socket falso: guarda lo que el servidor le manda y deja simular mensajes del cliente
 class FakeSocket extends EventEmitter {
@@ -71,9 +81,22 @@ function agentThat(run: (request: AgentRequest) => Promise<void>): AgentRunner {
   };
 }
 
+// limites holgados para los tests que no prueban limites
+const LIMITS: ConnectionLimits = {
+  maxMessageChars: 2000,
+  maxQueuedMessages: 10,
+  rateLimit: { messages: 100, windowMs: 60_000 },
+};
+
 function setup(
   agent: AgentRunner,
-  options: { sessions?: SessionStore; logger?: Logger; throttle?: number; now?: () => number } = {},
+  options: {
+    sessions?: SessionStore;
+    logger?: Logger;
+    throttle?: number;
+    now?: () => number;
+    limits?: Partial<ConnectionLimits>;
+  } = {},
 ) {
   const socket = new FakeSocket();
   const sessions = options.sessions ?? new InMemorySessionStore({ ttlMs: 60_000, maxMessages: 50 });
@@ -82,6 +105,7 @@ function setup(
     sessions,
     logger: options.logger ?? silentLogger,
     streamThrottleMs: options.throttle ?? 0,
+    limits: { ...LIMITS, ...options.limits },
     now: options.now,
   });
   return { socket, sessions, connection };
@@ -111,8 +135,9 @@ describe('GatewayConnection', () => {
     const { agent } = scriptedAgent(
       ['a', 'b', 'c', 'd'].map((delta) => ({ type: 'text' as const, delta })),
     );
-    // reloj falso que avanza 10 ms por pedacito (10, 20, 30, 40) con throttle de 25 ms:
-    // sale 'a' (primero), se saltan 'b' y 'c' (menos de 25 ms) y sale 'abcd' (30 ms despues)
+    // reloj falso que avanza 10 ms cada vez que alguien lo consulta, con throttle de 25 ms:
+    // sale 'a' (el primero siempre sale), se saltan 'b' y 'c' (10 y 20 ms despues) y
+    // sale 'abcd' (30 ms despues)
     let time = 0;
     const { socket, connection } = setup(agent, { throttle: 25, now: () => (time += 10) });
     socket.receive(userFrame('x'));
@@ -349,6 +374,102 @@ describe('GatewayConnection', () => {
     socket.receive('{roto');
     await connection.idle();
     expect(socket.sent).toEqual([]);
+  });
+
+  describe('limites', () => {
+    // revisa que un rechazo deje a la widget bien: mensaje complete del asistente + error.
+    // se busca en todo lo enviado (no solo al final) porque el rechazo sale de inmediato
+    // y las respuestas de los mensajes aceptados pueden llegar despues
+    function expectRejected(socket: FakeSocket, reply: string, error: string) {
+      expect(socket.messages).toContainEqual(
+        expect.objectContaining({ role: 'assistant', content: reply, status: 'complete' }),
+      );
+      expect(socket.errors).toContain(error);
+    }
+
+    it('rechaza mensajes demasiado largos sin llamar al agente', async () => {
+      const warn = vi.fn();
+      const { agent, requests } = scriptedAgent([{ type: 'text', delta: 'ok' }]);
+      const { socket, connection } = setup(agent, {
+        limits: { maxMessageChars: 5 },
+        logger: { ...silentLogger, warn },
+      });
+      socket.receive(userFrame('123456'));
+      await connection.idle();
+      expectRejected(socket, TOO_LONG_REPLY(5), 'Mensaje demasiado largo.');
+      expect(requests).toHaveLength(0);
+      expect(warn).toHaveBeenCalledWith('mensaje_rechazado', {
+        sessionId: connection.sessionId,
+        reason: 'largo',
+      });
+      // justo en el limite si pasa
+      socket.receive(userFrame('12345'));
+      await connection.idle();
+      expect(requests).toHaveLength(1);
+    });
+
+    it('rechaza mensajes con puros espacios', async () => {
+      const { agent, requests } = scriptedAgent([]);
+      const { socket, connection } = setup(agent);
+      socket.receive(userFrame('   \n '));
+      await connection.idle();
+      expectRejected(socket, BLANK_REPLY, 'Mensaje vacío.');
+      expect(requests).toHaveLength(0);
+    });
+
+    it('no deja que se acumulen mensajes sin limite mientras el agente responde', async () => {
+      let release: () => void = () => {};
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      const handled: string[] = [];
+      const agent: AgentRunner = {
+        async *respond({ input }) {
+          await gate;
+          handled.push(input.content);
+          yield { type: 'text', delta: 'ok' };
+        },
+      };
+      // 1 respondiendose + 1 en espera; el tercero se rechaza
+      const { socket, connection } = setup(agent, { limits: { maxQueuedMessages: 1 } });
+      socket.receive(userFrame('uno', 'u-1'));
+      socket.receive(userFrame('dos', 'u-2'));
+      socket.receive(userFrame('tres', 'u-3'));
+      expectRejected(socket, BUSY_REPLY, 'Demasiados mensajes en espera.');
+      release();
+      await connection.idle();
+      expect(handled).toEqual(['uno', 'dos']);
+      // ya libre, vuelve a aceptar
+      socket.receive(userFrame('cuatro', 'u-4'));
+      await connection.idle();
+      expect(handled).toEqual(['uno', 'dos', 'cuatro']);
+    });
+
+    it('aplica el rate limit por conexion y se recupera con el tiempo', async () => {
+      let time = 0;
+      const { agent, requests } = scriptedAgent([{ type: 'text', delta: 'ok' }]);
+      const { socket, connection } = setup(agent, {
+        limits: { rateLimit: { messages: 2, windowMs: 1000 } },
+        now: () => time,
+      });
+      socket.receive(userFrame('a', 'u-1'));
+      socket.receive(userFrame('b', 'u-2'));
+      socket.receive(userFrame('c', 'u-3'));
+      await connection.idle();
+      expectRejected(socket, RATE_LIMIT_REPLY, 'Límite de mensajes alcanzado.');
+      expect(requests).toHaveLength(2);
+      // medio segundo despues ya hay una ficha nueva (2 por segundo)
+      time += 500;
+      socket.receive(userFrame('d', 'u-4'));
+      await connection.idle();
+      expect(requests).toHaveLength(3);
+    });
+
+    it('los rechazos no se guardan en la conversacion', async () => {
+      const { agent } = scriptedAgent([]);
+      const { socket, connection, sessions } = setup(agent, { limits: { maxMessageChars: 1 } });
+      socket.receive(userFrame('largo'));
+      await connection.idle();
+      expect(await sessions.history(connection.sessionId)).toEqual([]);
+    });
   });
 
   it('funciona de punta a punta con el EchoAgent', async () => {

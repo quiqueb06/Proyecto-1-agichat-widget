@@ -7,6 +7,17 @@ import { agentActionSchema, parseClientFrame, serializeFrame } from '../protocol
 import type { ServerFrame } from '../protocol/frames.js';
 import type { Message } from '../protocol/message.js';
 import type { SessionStore } from '../session/SessionStore.js';
+import { RateLimiter } from './RateLimiter.js';
+
+// limites por conexion (vienen de la config)
+export interface ConnectionLimits {
+  // largo maximo del texto de un mensaje
+  maxMessageChars: number;
+  // mensajes que pueden esperar turno ademas del que se esta respondiendo
+  maxQueuedMessages: number;
+  // cuantos mensajes por ventana de tiempo
+  rateLimit: { messages: number; windowMs: number };
+}
 
 export interface ConnectionDeps {
   agent: AgentRunner;
@@ -14,7 +25,8 @@ export interface ConnectionDeps {
   logger: Logger;
   // minimo de ms entre snapshots del streaming (0 = mandar cada pedazo)
   streamThrottleMs: number;
-  // reloj inyectable para probar el throttle
+  limits: ConnectionLimits;
+  // reloj inyectable para probar el throttle y el rate limit
   now?: () => number;
 }
 
@@ -22,6 +34,13 @@ export interface ConnectionDeps {
 export const ERROR_REPLY = 'Lo siento, ocurrió un error al generar la respuesta. Intenta de nuevo.';
 export const INTERRUPTED_NOTE = '\n\n_(La respuesta se interrumpió por un error.)_';
 export const EMPTY_REPLY = 'No tengo una respuesta para eso. ¿Puedes intentarlo de otra forma?';
+export const TOO_LONG_REPLY = (max: number) =>
+  `Tu mensaje es muy largo. Intenta resumirlo en menos de ${max} caracteres.`;
+export const BLANK_REPLY = 'No recibí ningún texto. ¿Qué te gustaría preguntar?';
+export const BUSY_REPLY =
+  'Espera a que termine la respuesta anterior antes de enviar otro mensaje.';
+export const RATE_LIMIT_REPLY =
+  'Estás enviando mensajes muy rápido. Espera un momento e inténtalo de nuevo.';
 
 // una conexion = una sesion de chat con una widget.
 // recibe los mensajes del usuario, se los pasa al agente uno por uno y le va mandando
@@ -33,13 +52,17 @@ export class GatewayConnection {
   // los turnos se encadenan: si el usuario manda dos mensajes rapido, el segundo
   // espera a que termine el primero (asi no se mezclan dos respuestas)
   private queue: Promise<void> = Promise.resolve();
+  // turnos en cola o en curso, para no dejar que se acumulen sin limite
+  private pending = 0;
   private readonly now: () => number;
+  private readonly limiter: RateLimiter;
 
   constructor(
     private readonly socket: WebSocket,
     private readonly deps: ConnectionDeps,
   ) {
     this.now = deps.now ?? Date.now;
+    this.limiter = new RateLimiter({ ...deps.limits.rateLimit, now: this.now });
     socket.on('message', (data, isBinary) => this.onMessage(data, isBinary));
     socket.on('close', () => void this.onClose());
     socket.on('error', (error) =>
@@ -64,8 +87,52 @@ export class GatewayConnection {
       return;
     }
     const input = parsed.frame.message;
+    const { limits } = this.deps;
+
+    // reglas antes de molestar al agente (cada llamada al agente gasta cuota de groq)
+    if (input.content.length > limits.maxMessageChars) {
+      return this.reject(
+        TOO_LONG_REPLY(limits.maxMessageChars),
+        'Mensaje demasiado largo.',
+        'largo',
+      );
+    }
+    if (!input.content.trim()) {
+      return this.reject(BLANK_REPLY, 'Mensaje vacío.', 'vacio');
+    }
+    // uno respondiendose + maxQueuedMessages esperando; mas que eso ya es abuso
+    if (this.pending > limits.maxQueuedMessages) {
+      return this.reject(BUSY_REPLY, 'Demasiados mensajes en espera.', 'cola_llena');
+    }
+    if (!this.limiter.tryTake()) {
+      return this.reject(RATE_LIMIT_REPLY, 'Límite de mensajes alcanzado.', 'rate_limit');
+    }
+
+    this.pending += 1;
     // runTurn nunca lanza, por eso la cadena de la cola nunca se rompe
-    this.queue = this.queue.then(() => this.runTurn(input));
+    this.queue = this.queue
+      .then(() => this.runTurn(input))
+      .finally(() => {
+        this.pending -= 1;
+      });
+  }
+
+  // rechaza un mensaje valido explicandole al usuario por que.
+  // igual que con los errores, mandamos un mensaje complete del asistente para que
+  // la widget quite los puntitos de "escribiendo", y ademas el frame de error
+  private reject(reply: string, error: string, reason: string): void {
+    this.deps.logger.warn('mensaje_rechazado', { sessionId: this.sessionId, reason });
+    this.send({
+      type: 'message',
+      message: {
+        id: randomUUID(),
+        role: 'assistant',
+        content: reply,
+        createdAt: new Date().toISOString(),
+        status: 'complete',
+      },
+    });
+    this.send({ type: 'error', error });
   }
 
   // un turno: guarda el mensaje del usuario, llama al agente y manda la respuesta
