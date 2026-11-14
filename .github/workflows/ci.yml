@@ -65,6 +65,24 @@ jobs:
           path: coverage/
           retention-days: 7
 
+  # construye la imagen del servidor del agente y revisa que arranque y responda /health,
+  # asi nos enteramos si un cambio de dependencias rompe el Dockerfile (no usa ninguna api key)
+  docker:
+    name: Imagen Docker del agente
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: docker build -f packages/agent-server/Dockerfile -t agichat-agent .
+      - name: Arranca y responde /health
+        run: |
+          docker run -d --name agente -p 8787:8787 agichat-agent
+          for i in $(seq 1 20); do
+            if curl -fs http://localhost:8787/health; then exit 0; fi
+            sleep 1
+          done
+          docker logs agente
+          exit 1
+
   build:
     name: Build
     runs-on: ubuntu-latest

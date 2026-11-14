@@ -28,6 +28,8 @@ npm run dev -w @agichat/agent-server
 npm install zod -w @agichat/mcp-tmdb
 ```
 
+Para correr el backend en un contenedor (imagen con `agent-server` y los dos servidores MCP), consulta [docs/DESPLIEGUE.md](../docs/DESPLIEGUE.md).
+
 Cada paquete tiene los scripts `dev` (`tsx watch`), `build` (`tsc` a `dist/`), `start`, `typecheck`, `test` y `test:coverage`.
 
 ## Convenciones
