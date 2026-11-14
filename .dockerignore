@@ -1,0 +1,13 @@
+# lo que docker no copia al construir la imagen del servidor del agente.
+# importante: nunca meter los .env (tienen las api keys) ni node_modules locales
+**/node_modules
+**/dist
+**/coverage
+dist-demo
+.git
+.github
+.env
+.env.*
+**/.env
+**/.env.*
+*.log

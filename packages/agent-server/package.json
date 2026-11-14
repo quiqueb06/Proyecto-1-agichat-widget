@@ -1,0 +1,26 @@
+{
+  "name": "@agichat/agent-server",
+  "version": "0.1.0",
+  "description": "Servidor del agente de AGIChat: gateway WebSocket, sesiones y orquestacion de agentes",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "ws": "^8.23.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.2"
+  }
+}

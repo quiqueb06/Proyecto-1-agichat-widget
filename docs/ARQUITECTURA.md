@@ -99,7 +99,11 @@ src/
 └── test/             # Configuración compartida y transporte falso para pruebas
 
 demo/                 # Aplicación demo e integración del script embebible
-docs/                 # Documentación del SDK, transporte y arquitectura
+docs/                 # Documentación del SDK, transporte, arquitectura y despliegue
+packages/             # Backend del proyecto 2 (npm workspaces), ver la sección 9
+├── agent-server/     # Gateway WebSocket, sesiones, configuración y agentes
+├── mcp-tmdb/         # Servidor MCP de películas (TMDB)
+└── mcp-books/        # Servidor MCP de libros (Google Books)
 .github/workflows/    # Automatización de CI, despliegue y release
 ```
 
@@ -127,6 +131,117 @@ Las pruebas unitarias y de componentes se encuentran junto a los módulos corres
 Los mensajes del asistente se presentan con `MarkdownMessage`, tanto en `MessageList` como en `DefaultChatView`. El renderer usa `react-markdown` con `remark-gfm` para tablas y otras extensiones de GitHub Flavored Markdown. `rehype-highlight` resalta bloques de código cuando el bloque indica un lenguaje.
 
 El contenido recibido se trata como no confiable. `rehype-sanitize` sanitiza el árbol renderizado y no se habilita HTML crudo mediante `rehype-raw`. Los mensajes del usuario no pasan por el renderer Markdown y permanecen como texto normal.
+
+## 9. Sistema de agentes (proyecto 2): arquitectura de alto nivel
+
+En el proyecto 2 la widget deja de hablar con el mock y se conecta a un **sistema multiagente** que recomienda películas con TMDB y las compara con su libro en Google Books. El backend vive en `packages/` como npm workspaces y la widget no cambia de arquitectura. Solo usa `WebSocketTransport` con el endpoint del servidor y recibe un frame nuevo, `action`, definido en [TRANSPORT.md](TRANSPORT.md).
+
+Esta sección es la vista de **alto nivel**: qué piezas hay, cómo se comunican y por qué el diseño escala. La organización interna de los agentes (orquestador, subagentes y su clasificación) tiene su propio diagrama de bajo nivel.
+
+### 9.1 Diagrama
+
+```mermaid
+flowchart TB
+  subgraph Navegador["Navegador del usuario"]
+    Sitio["Sitio del cliente"]
+    Widget["Widget AGIChat<br/>WebSocketTransport"]
+    Pestanas["Pestañas nuevas<br/>IMDb / Google Books"]
+  end
+
+  subgraph Servidor["agent-server (contenedor Docker)"]
+    Gateway["Gateway WebSocket<br/>origen, límites, rate limit,<br/>validación de frames, streaming"]
+    Sesiones[("SessionStore<br/>memoria hoy, Redis después")]
+    Guardrails["Guardrails<br/>LLM01 / LLM07"]
+    Orquestador["Orquestador"]
+    SubPeliculas["Agente de Películas"]
+    SubLibros["Agente de Libros<br/>y Comparación"]
+    LLM["LLMClient"]
+  end
+
+  subgraph MCP["Servidores MCP (procesos independientes)"]
+    McpTmdb["mcp-tmdb<br/>caché con TTL"]
+    McpBooks["mcp-books<br/>caché con TTL"]
+  end
+
+  Groq["Groq API"]
+  TMDB["TMDB API"]
+  Books["Google Books API"]
+  Imagenes["image.tmdb.org<br/>pósters"]
+
+  Sitio -->|"monta"| Widget
+  Widget <-->|"WebSocket: message / error / action"| Gateway
+  Gateway <-->|"historial por conexión"| Sesiones
+  Gateway -->|"AgentRunner.respond()"| Guardrails
+  Guardrails --> Orquestador
+  Orquestador --> SubPeliculas
+  Orquestador --> SubLibros
+  Orquestador --> LLM
+  SubPeliculas --> LLM
+  SubLibros --> LLM
+  LLM -->|"HTTPS + API key"| Groq
+  SubPeliculas -->|"MCP stdio"| McpTmdb
+  SubLibros -->|"MCP stdio"| McpBooks
+  McpTmdb -->|"HTTPS + API key"| TMDB
+  McpBooks -->|"HTTPS + API key"| Books
+  Widget -.->|"carga el póster del Markdown"| Imagenes
+  Widget -.->|"frame action: open_url"| Pestanas
+```
+
+### 9.2 Piezas y responsabilidades
+
+| Pieza                                | Dónde                                      | Responsabilidad                                                                                                                                                                                |
+| ------------------------------------ | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Widget                               | `src/`                                     | Muestra la conversación, renderiza el Markdown sanitizado (con los pósters) y abre las pestañas que pide el frame `action`. **No conoce ninguna API key.**                                     |
+| Gateway WebSocket                    | `packages/agent-server/src/gateway`        | Valida el origen, el tamaño y la forma de cada frame. Aplica los límites. Convierte los eventos del agente en snapshots de streaming. Detecta clientes muertos. No sabe nada de LLM ni de MCP. |
+| `SessionStore`                       | `packages/agent-server/src/session`        | Guarda el historial de cada conversación con TTL y un tope de mensajes. Es una interfaz asíncrona; hoy se implementa en memoria.                                                               |
+| Contrato `AgentRunner`               | `packages/agent-server/src/agent/types.ts` | Es el único punto de contacto entre el gateway y los agentes: `respond({ sessionId, history, input, signal })` devuelve un flujo de eventos `text` y `action`.                                 |
+| Guardrails, orquestador y subagentes | `packages/agent-server` (P4 y P5)          | Deciden qué responder, a qué subagente delegar y qué herramientas usar. Filtran la entrada y la salida contra inyección de prompt y filtración del prompt de sistema.                          |
+| `LLMClient`                          | `packages/agent-server` (P4)               | Abstrae el proveedor (Groq). En tests se usa `FakeLLM`.                                                                                                                                        |
+| Servidores MCP                       | `packages/mcp-tmdb`, `packages/mcp-books`  | Exponen las herramientas de películas y libros con esquemas `zod`. Guardan en caché las respuestas de las APIs externas.                                                                       |
+
+### 9.3 Flujo de un turno
+
+1. El usuario escribe en la widget. `WebSocketTransport` manda `{ "type": "message" }` al gateway.
+2. El origen ya se revisó al abrir la conexión (403 si no está permitido), y un frame más grande que `MAX_PAYLOAD_BYTES` cierra la conexión. El gateway valida cada frame: JSON, forma, rol `user`, largo, mensajes vacíos y rate limit. Si algo falla, responde con un mensaje completo del asistente más un frame `error`, sin cerrar la conexión.
+3. El turno entra en la cola de la conexión, así que una conexión procesa un turno a la vez. El gateway lee el historial del `SessionStore`, guarda el mensaje nuevo y llama a `AgentRunner.respond()`.
+4. El orquestador, detrás de los guardrails, delega en los subagentes. Ellos llaman al LLM y a las herramientas MCP, que consultan TMDB o Google Books (o su caché).
+5. Cada evento `text` se acumula y el gateway manda un snapshot con el mismo `id`, como mucho cada 50 ms. Cada evento `action` se valida (URL `https` y etiqueta corta) y se reenvía a la widget.
+6. Al terminar, el gateway manda el snapshot `complete` y guarda la respuesta en la sesión. Si el usuario se desconecta a la mitad, el `AbortSignal` detiene al agente para que no siga gastando requests.
+
+### 9.4 Por qué escala
+
+- **El gateway se puede replicar horizontalmente.**
+  - Una sesión vive lo mismo que su conexión WebSocket, y esa conexión siempre está en la misma instancia. Por eso varias réplicas detrás de un balanceador funcionan sin compartir estado ni usar sticky sessions: cada conexión nueva puede caer en cualquier réplica.
+  - La configuración sale de variables de entorno.
+  - El servidor expone `/health` para el balanceador y se apaga de forma ordenada con `SIGTERM`: cierra cada conexión con el código 1001, y la widget, que ya maneja reconexiones, vuelve a conectarse a otra réplica.
+  - `MAX_CONNECTIONS` acota la carga de cada réplica, así que la capacidad crece agregando réplicas.
+- **Las sesiones son intercambiables.**
+  - El gateway solo conoce la interfaz `SessionStore`, que ya es asíncrona.
+  - Si se quiere que una conversación sobreviva a una reconexión o a un reinicio, se cambia `InMemorySessionStore` por una implementación con Redis sin tocar el gateway ni los agentes.
+- **Los agentes están desacoplados del transporte.**
+  - El gateway solo depende de `AgentRunner`. Se puede cambiar el modelo, el proveedor de LLM o la organización de los agentes sin tocar el gateway ni la widget.
+  - Las pruebas usan `EchoAgent` o `FakeLLM` sin gastar requests reales.
+- **Los servidores MCP son independientes y reutilizables.**
+  - Cada uno es un paquete y un proceso aparte, con su propia caché y sus tests.
+  - Cualquier otro agente o cliente MCP puede usarlos sin conocer este proyecto.
+  - Hoy se conectan por stdio dentro del mismo contenedor. Si la carga lo pide, el mismo servidor puede exponerse por HTTP y escalar por separado del gateway.
+- **La caché y los límites cuidan los recursos más escasos.**
+  - Las cuotas gratuitas de Groq, TMDB y Google Books son el verdadero cuello de botella, no la CPU.
+  - La caché con TTL de los MCP evita repetir consultas.
+  - El rate limit por conexión, la cola máxima de mensajes, el largo máximo de mensaje y el tope de historial limitan cuántas requests y tokens puede gastar un solo usuario.
+  - El `AbortSignal` corta el trabajo de las conexiones que se cierran.
+- **El streaming es barato.**
+  - El throttle de 50 ms agrupa los fragmentos del LLM en pocos frames. Cada snapshot trae el texto acumulado completo, así que la widget solo reemplaza el mensaje por `id` y no tiene que reensamblar fragmentos.
+  - El heartbeat ping/pong libera las conexiones muertas.
+- **Hay seguridad en el borde.**
+  - La allowlist de `Origin`, el `maxPayload` y la validación con `zod` rechazan el tráfico inválido antes de que llegue a los agentes.
+  - Las API keys solo existen en el servidor, nunca en la widget ni en la imagen Docker.
+
+### 9.5 Límites actuales
+
+- El `SessionStore` es en memoria, así que una conversación se pierde al reconectar. Por eso la demo no guarda historial en el navegador cuando usa el agente real.
+- El rate limit es por conexión y el contador de cuotas de cada MCP es por proceso. Con varias réplicas, un límite global (por ejemplo, requests diarias de Groq) necesitaría un contador compartido, como Redis.
+- El servidor corre localmente o en Docker (ver [DESPLIEGUE.md](DESPLIEGUE.md)). La imagen está lista para cualquier plataforma que acepte contenedores con WebSockets.
 
 ```
 

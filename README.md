@@ -19,7 +19,22 @@ npm install
 npm run dev
 ```
 
-La página de demo queda en `http://localhost:5173`.
+La página de demo queda en `http://localhost:5173`. Sin más configuración usa el mock.
+
+### Demo con el servidor del agente
+
+1. Copia `.env.example` como `.env.local`. Trae `VITE_AGENT_URL=ws://localhost:8787/ws`.
+2. En una terminal levanta el servidor del agente:
+
+   ```bash
+   npm run dev:agent
+   ```
+
+3. En otra terminal levanta la demo con `npm run dev`. El indicador dice "Servidor del agente".
+
+La configuración del servidor (puerto, orígenes permitidos, límites) está documentada en
+`packages/agent-server/.env.example`. Más detalles en [packages/README.md](packages/README.md).
+Para correr el servidor con Docker, consulta [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md).
 
 ## Guía de uso
 
@@ -92,4 +107,5 @@ Seguimos **GitHub Flow**. Lee [CONTRIBUTING.md](CONTRIBUTING.md) antes de abrir 
 - [SDK: widget, API AGIChat y hook useChat](docs/SDK.md)
 - [Conexión, Mock API y protocolo WebSocket](docs/TRANSPORT.md)
 - [Arquitectura](docs/ARQUITECTURA.md)
+- [Despliegue del servidor del agente (Docker)](docs/DESPLIEGUE.md)
 - [Guía para herramientas agénticas](AGENTS.md)
