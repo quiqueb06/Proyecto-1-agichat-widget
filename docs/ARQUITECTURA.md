@@ -21,7 +21,38 @@ El proyecto se organiza en áreas funcionales. Cuenta con interfaz visual, lógi
 
 No existe una clase Adapter separada. Lo que sí está implementado es un contrato común con transportes intercambiables, elegidos por `createTransport`. Así se puede cambiar el mecanismo de comunicación sin cambiar la lógica principal del store.
 
-## 3. Diagrama de alto nivel
+## 3. Diagrama de alto nivel (HLD del Proyecto 2)
+
+```mermaid
+flowchart LR
+  Usuario["Usuario"]
+  Frontend["Frontend / AGIChat Widget"]
+  Backend["Backend / Sistema multiagente"]
+  Groq["Servicio LLM / Groq"]
+  Peliculas["Servicio MCP de películas"]
+  Libros["Servicio MCP de libros"]
+  TMDB["API TMDB"]
+  Books["API Google Books"]
+  CachePeliculas[("Caché de películas en memoria")]
+  Usuario <--> Frontend
+  Frontend <-->|"WebSocket"| Backend
+  Backend <-->|"HTTPS"| Groq
+  Backend <-->|"MCP stdio"| Peliculas
+  Backend <-->|"MCP stdio"| Libros
+  Peliculas <-->|"HTTPS"| TMDB
+  Libros <-->|"HTTPS"| Books
+  Peliculas <--> CachePeliculas
+  Frontend -->|"HTTPS: pósters"| TMDB
+```
+
+El diagrama representa la arquitectura objetivo, no certifica que todos los servicios
+estén integrados. MCP TMDB, pósters y créditos están implementados. El arranque actual
+del backend todavía usa el agente de prueba; orquestación, Groq, Books y acciones
+frontend quedan a cargo de las otras personas. La caché TMDB es local a cada proceso.
+
+### 3.1 Detalle interno del SDK (bajo nivel)
+
+El siguiente diagrama documenta implementación; no forma parte del HLD.
 
 ```mermaid
 flowchart LR
@@ -132,13 +163,13 @@ Los mensajes del asistente se presentan con `MarkdownMessage`, tanto en `Message
 
 El contenido recibido se trata como no confiable. `rehype-sanitize` sanitiza el árbol renderizado y no se habilita HTML crudo mediante `rehype-raw`. Los mensajes del usuario no pasan por el renderer Markdown y permanecen como texto normal.
 
-## 9. Sistema de agentes (proyecto 2): arquitectura de alto nivel
+## 9. Sistema de agentes: detalle de componentes y arquitectura objetivo
 
 En el proyecto 2 la widget deja de hablar con el mock y se conecta a un **sistema multiagente** que recomienda películas con TMDB y las compara con su libro en Google Books. El backend vive en `packages/` como npm workspaces y la widget no cambia de arquitectura. Solo usa `WebSocketTransport` con el endpoint del servidor y recibe un frame nuevo, `action`, definido en [TRANSPORT.md](TRANSPORT.md).
 
-Esta sección es la vista de **alto nivel**: qué piezas hay, cómo se comunican y por qué el diseño escala. La organización interna de los agentes (orquestador, subagentes y su clasificación) tiene su propio diagrama de bajo nivel.
+Esta sección conserva el detalle técnico de la arquitectura objetivo, separado del HLD de la sección 3. Algunas piezas de Personas 3, 4 y 5 siguen pendientes de integración.
 
-### 9.1 Diagrama
+### 9.1 Diagrama de componentes (detalle técnico)
 
 ```mermaid
 flowchart TB
@@ -246,3 +277,18 @@ flowchart TB
 ```
 
 ```
+
+### Integración de películas y atribución
+
+El contrato de las tres herramientas, errores y configuración está en
+[packages/mcp-tmdb/README.md](../packages/mcp-tmdb/README.md). El MCP entrega poster_url
+lista para Markdown e imdb_url lista para un enlace; no construye prompts ni abre pestañas.
+MarkdownMessage solo renderiza pósters HTTPS de image.tmdb.org bajo /t/p/w500/,
+sin credenciales, puertos personalizados, query ni fragmento. Mantiene HTML crudo
+bloqueado y sustituye imágenes inválidas o fallidas por texto alternativo.
+
+TmdbAttribution coloca el logo oficial proporcionado, sin alterar sus bytes ni proporciones,
+en Créditos de ChatWindow y DefaultChatView. El aviso es:
+"This product uses the TMDB API but is not endorsed or certified by TMDB."
+El enlace apunta a https://www.themoviedb.org con noopener noreferrer.
+El logo se incluye en el SDK y embed; no proviene de Markdown generado por el agente.

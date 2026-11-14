@@ -1,4 +1,4 @@
-# MCP TMDB: base y contratos
+# MCP TMDB: películas y recomendaciones
 
 Servidor independiente por stdio. Usa exclusivamente la línea oficial MCP v2:
 `@modelcontextprotocol/server` 2.4.0 y Zod 4.6.7 en producción; el cliente oficial
@@ -12,7 +12,8 @@ Referencias oficiales consultadas:
 
 ## Ejecutar
 
-Desde la raíz:
+Desde la raíz, instalar con `npm ci` (una vez para todos los workspaces).
+Después:
 
 ```sh
 npm run dev -w @agichat/mcp-tmdb
@@ -43,14 +44,14 @@ Los IDs son enteros positivos seguros de JavaScript.
 | recommend_movies  | genre?: string de 1–100; year?: año; similar_to?: título de 1–200; limit?: entero 1–10, predeterminado 5 |
 
 `genre` es un nombre legible, no un ID. `similar_to` es un título, no un ID.
-Se permiten filtros combinados y también ninguno. En la siguiente etapa:
+Se permiten filtros combinados y también ninguno. Comportamiento actual:
 
 - Sin similar_to: discover con género/año; sin filtros, discover por popularidad.
 - Con similar_to: priorizar coincidencia exacta de título u original_title,
   normalizada sin acentos/case, y luego menor ID para desempatar entre los primeros 20 resultados.
 - Aplicar género y año como intersección sobre las recomendaciones de ese ID.
   Pueden devolverse menos de limit resultados; no se rellenan ignorando filtros.
-- Acotar páginas y consultas adicionales al implementar el cliente HTTP. El límite
+- Se consulta una sola página por endpoint. El límite
   de resultados por sí solo no limita las solicitudes HTTP.
 
 search_movie y recommend_movies devuelven `{ results: MovieSummary[] }`, máximo 10.
@@ -67,7 +68,7 @@ admiten null. release_date es una fecha ISO real; genres es una lista de objetos
 
 poster_url solo admite HTTPS en image.tmdb.org, ruta `/t/p/w500/archivo.jpg`
 (también png/webp), sin credenciales, puerto no predeterminado, query ni fragmento.
-Esto valida datos backend; no sustituye la futura protección del renderer frontend.
+El renderer frontend aplica además su propia allowlist equivalente.
 imdb_id es `tt` seguido de dígitos. imdb_url es
 `https://www.imdb.com/title/{imdb_id}/`; ambos deben corresponder o ser null juntos.
 
@@ -116,9 +117,64 @@ si exige esperar más de 30 segundos se devuelve el error sin reintentar antes d
 Sin header válido se usa backoff 250ms exponencial. Red y timeout no se reintentan.
 Errores: CONFIGURATION_INVALID, TIMEOUT, CANCELLED, AUTH_FAILED, NOT_FOUND,
 RATE_LIMITED, UPSTREAM_UNAVAILABLE, HTTP_ERROR, INVALID_JSON, INVALID_RESPONSE,
-BUDGET_EXHAUSTED, MOVIE_NOT_FOUND, GENRE_NOT_FOUND, NETWORK_ERROR, ENDPOINT_INVALID.
+BUDGET_EXHAUSTED, MOVIE_NOT_FOUND, GENRE_NOT_FOUND, NETWORK_ERROR, ENDPOINT_INVALID, RESPONSE_TOO_LARGE.
 No hay logs normales en stdout ni exposición de cuerpos de error externos.
 
 Pendientes para Personas 3/4: identificar libro original, propagar entorno del proceso,
 compartir presupuesto si hay réplicas y decidir si necesitan paginación adicional.
-Frontend y créditos no forman parte de esta etapa.
+Los pósters y créditos ya están implementados en ambas vistas del widget.
+
+## Configuración del proceso
+
+| Variable            | Default     | Uso                                                       |
+| ------------------- | ----------- | --------------------------------------------------------- |
+| TMDB_API_TOKEN      | obligatorio | Token de lectura Bearer; solo backend                     |
+| TMDB_TIMEOUT_MS     | 10000       | Timeout por intento, hasta 60000 ms                       |
+| TMDB_CACHE_TTL_MS   | 300000      | TTL, máximo 86400000 ms                                   |
+| TMDB_CACHE_CAPACITY | 200         | Entradas, máximo 10000                                    |
+| TMDB_DAILY_BUDGET   | 500         | Presupuesto interno por día UTC/proceso, no cuota oficial |
+| TMDB_MAX_RETRIES    | 2           | Reintentos por request, de 0 a 3                          |
+
+## Integración para Personas 3 y 4
+
+Persona 4 debe compilar, lanzar el proceso por stdio con el cliente MCP v2,
+pasar el entorno y propagar cancelación. Descubrir herramientas no exige token;
+la primera consulta valida credenciales/configuración local. No hay endpoint HTTP MCP.
+Ejemplos de argumentos (JSON, no llamadas a APIs en tests):
+
+```json
+{ "query": "Dune", "year": 2021, "limit": 3 }
+```
+
+```json
+{ "id": 438631 }
+```
+
+```json
+{ "genre": "Drama", "year": 2021, "similar_to": "Dune", "limit": 5 }
+```
+
+En éxito, leer structuredContent; content también incluye el mismo JSON como texto.
+En error, isError es true y content contiene JSON con code y message genérico.
+Los argumentos inválidos los rechaza el SDK antes del handler.
+
+El agente puede insertar `![Póster de película](poster_url)` usando el valor recibido
+sin reconstruirlo. Si es null, omitir la imagen y responder con los demás datos.
+No insertar literalmente el nombre del campo ni generar URLs inventadas.
+El frontend conserva el alt si bloquea la URL o falla la carga.
+imdb_url solo está presente como URL cuando imdb_id es válido; null en caso contrario.
+Este paquete no abre IMDb: las acciones y la apertura de pestañas son integración externa.
+
+Persona 3 puede usar title, original_title, release_year o release_date y overview
+para buscar candidatos en Google Books; el año es de la película, no del libro.
+El ID TMDB y el ID IMDb identifican películas, no volúmenes de Google Books.
+evidence_found solo significa que TMDB contiene la keyword objetivo; unknown significa
+que falta información suficiente, nunca que se ha demostrado ausencia de libro.
+No se proporciona autor ni título confirmado del libro original.
+
+Limitaciones: coincidencias de títulos se resuelven solo entre los primeros 20 candidatos;
+el menor ID es un desempate determinista, no una garantía de identidad. Filtros sobre
+recomendaciones pueden dejar menos resultados de los pedidos. Cache/budget se reinician
+con el proceso y no son globales. No se deduplican requests en vuelo. La integración
+end-to-end con Groq/orquestador, Books, acciones y guardrails globales sigue pendiente
+con Personas 3, 4 y 5; no pertenece a este paquete.
