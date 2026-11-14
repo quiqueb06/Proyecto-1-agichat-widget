@@ -1,2 +1,5 @@
-// punto de entrada del servidor mcp de peliculas (tmdb), lo implementa la persona 2
-export const SERVER_NAME = 'agichat-mcp-tmdb';
+import { serveStdio } from '@modelcontextprotocol/server/stdio';
+import { createServer } from './server.js';
+
+// stdout pertenece exclusivamente al protocolo MCP.
+await serveStdio(createServer);

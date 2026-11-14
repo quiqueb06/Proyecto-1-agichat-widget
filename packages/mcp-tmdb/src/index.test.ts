@@ -1,8 +1,18 @@
-import { describe, expect, it } from 'vitest';
-import { SERVER_NAME } from './index.js';
+import { describe, expect, it, vi } from 'vitest';
 
-describe('@agichat/mcp-tmdb', () => {
-  it('expone su nombre', () => {
-    expect(SERVER_NAME).toBe('agichat-mcp-tmdb');
+const { serve } = vi.hoisted(() => ({ serve: vi.fn() }));
+vi.mock('@modelcontextprotocol/server/stdio', () => ({ serveStdio: serve }));
+
+describe('entrada stdio', () => {
+  it('inicia el transporte con la fábrica del servidor sin escribir logs', async () => {
+    const stdout = vi.spyOn(process.stdout, 'write');
+    try {
+      await import('./index.js');
+      expect(serve).toHaveBeenCalledOnce();
+      expect(serve.mock.calls[0]?.[0]).toBeTypeOf('function');
+      expect(stdout).not.toHaveBeenCalled();
+    } finally {
+      stdout.mockRestore();
+    }
   });
 });
