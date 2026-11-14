@@ -23,19 +23,11 @@ npm run start -w @agichat/mcp-tmdb
 Para Persona 4, el comando de producción es `node packages/mcp-tmdb/dist/index.js`
 desde la raíz del contenedor/repositorio. `src/server.ts` exporta `createServer`
 sin iniciar procesos; `src/index.ts` inicia stdio. stdout solo contiene MCP.
-No se necesitan credenciales en esta etapa. No se consulta ninguna API.
-
-Las tres herramientas registran inputSchema y outputSchema. Para argumentos válidos
-devuelven un error de herramienta MCP (`isError: true`) con un bloque de texto JSON:
-
-```json
-{ "code": "NOT_IMPLEMENTED", "message": "La integración con TMDB todavía no está implementada." }
-```
-
-Este error no es una salida de éxito y no incluye structuredContent. Los argumentos
-inválidos son rechazados por el SDK antes del handler. Cuando se implemente TMDB,
-las salidas de éxito deberán respetar los esquemas de `src/schemas.ts` y enviarse
-como structuredContent, con representación de texto compatible con el cliente.
+La configuración se recibe del entorno: ver `.env.example` de este paquete. No se
+carga ningún `.env` automáticamente; Persona 4 debe pasar las variables al hijo.
+Se valida al crear el cliente en la primera llamada válida, permitiendo descubrimiento
+sin credenciales. Éxitos: structuredContent más bloque de texto JSON. Fallos:
+isError:true y texto JSON con code y mensaje fijo sin datos sensibles.
 
 ## Contratos v1 del dominio
 
@@ -54,8 +46,8 @@ Los IDs son enteros positivos seguros de JavaScript.
 Se permiten filtros combinados y también ninguno. En la siguiente etapa:
 
 - Sin similar_to: discover con género/año; sin filtros, discover por popularidad.
-- Con similar_to: resolver el título a un ID; si hay ambigüedad, pedir aclaración
-  mediante un error controlado, sin escoger arbitrariamente una película.
+- Con similar_to: priorizar coincidencia exacta de título u original_title,
+  normalizada sin acentos/case, y luego menor ID para desempatar entre los primeros 20 resultados.
 - Aplicar género y año como intersección sobre las recomendaciones de ese ID.
   Pueden devolverse menos de limit resultados; no se rellenan ignorando filtros.
 - Acotar páginas y consultas adicionales al implementar el cliente HTTP. El límite
@@ -95,8 +87,38 @@ esa relación por separado. Estas son decisiones locales del contrato que Person
 ## Validación y pendientes
 
 Tests con Zod, cliente MCP en memoria y proceso real por stdio, sin APIs externas.
-Cobertura mínima del 80 % sin exclusiones adicionales. Los módulos de herramientas
-se separarán cuando tengan lógica propia; hoy comparten un handler NOT_IMPLEMENTED.
+Cobertura mínima del 80 % sin exclusiones adicionales.
 
-Pendientes: cliente TMDB, manejo de errores HTTP, cancelación, TTL/capacidad de caché,
-presupuesto diario, recomendaciones reales, frontend y créditos. No están implementados.
+## Cliente, caché y presupuesto
+
+HTTP con Bearer, redirects bloqueados, timeout por intento y AbortSignal MCP.
+El cliente conserva una copia validada, normalizada e inmutable de la configuración;
+las mutaciones posteriores del objeto del llamador no afectan su funcionamiento.
+El body exitoso se lee por stream con un máximo de 2 MiB de bytes entregados por
+fetch (descomprimidos), antes de JSON.parse y sin confiar en Content-Length.
+Al superar el límite se cancela la lectura y se devuelve RESPONSE_TOO_LARGE;
+esa respuesta no se cachea ni reintenta. Un body dentro del límite todavía puede
+ser rechazado por JSON o por el esquema. El límite no controla el tamaño de cada
+chunk que fetch ya haya recibido ni el consumo interno del transporte.
+Solo endpoints internos permitidos. JSON externo validado con Zod y salidas validadas
+con los contratos públicos originales. Detalles incorpora append_to_response=keywords.
+Idioma es-ES; nombres de género deben corresponder al catálogo español (sin acentos/case).
+Se consulta solo la primera página: hasta 20 candidatos, máximo 10 resultados.
+
+Caché en memoria por URL con parámetros ordenados, FIFO, expiración y capacidad.
+TTL predeterminado 5 minutos, máximo configurable 24 horas. No almacena errores.
+No deduplica solicitudes en vuelo: cada consumidor mantiene cancelación independiente.
+Contador por proceso/día UTC, incluye reintentos enviados, excluye hits de caché.
+Reinicio manual disponible para tests. Reinicios y réplicas no comparten presupuesto.
+
+429/5xx: hasta 2 reintentos por defecto (máximo 3). Retry-After admite segundos o fecha;
+si exige esperar más de 30 segundos se devuelve el error sin reintentar antes de tiempo.
+Sin header válido se usa backoff 250ms exponencial. Red y timeout no se reintentan.
+Errores: CONFIGURATION_INVALID, TIMEOUT, CANCELLED, AUTH_FAILED, NOT_FOUND,
+RATE_LIMITED, UPSTREAM_UNAVAILABLE, HTTP_ERROR, INVALID_JSON, INVALID_RESPONSE,
+BUDGET_EXHAUSTED, MOVIE_NOT_FOUND, GENRE_NOT_FOUND, NETWORK_ERROR, ENDPOINT_INVALID.
+No hay logs normales en stdout ni exposición de cuerpos de error externos.
+
+Pendientes para Personas 3/4: identificar libro original, propagar entorno del proceso,
+compartir presupuesto si hay réplicas y decidir si necesitan paginación adicional.
+Frontend y créditos no forman parte de esta etapa.
