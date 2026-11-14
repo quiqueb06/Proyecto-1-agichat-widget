@@ -19,7 +19,21 @@ npm install
 npm run dev
 ```
 
-La página de demo queda en `http://localhost:5173`.
+La página de demo queda en `http://localhost:5173`. Sin más configuración usa el mock.
+
+### Demo con el servidor del agente
+
+1. Copia `.env.example` como `.env.local`. Trae `VITE_AGENT_URL=ws://localhost:8787/ws`.
+2. En una terminal levanta el servidor del agente:
+
+   ```bash
+   npm run dev:agent
+   ```
+
+3. En otra terminal levanta la demo con `npm run dev`. El indicador dice "Servidor del agente".
+
+La configuración del servidor (puerto, orígenes permitidos, límites) está documentada en
+`packages/agent-server/.env.example`. Más detalles en [packages/README.md](packages/README.md).
 
 ## Guía de uso
 

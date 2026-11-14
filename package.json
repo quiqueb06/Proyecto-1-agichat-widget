@@ -28,6 +28,7 @@
   ],
   "scripts": {
     "dev": "vite",
+    "dev:agent": "npm run dev -w @agichat/agent-server",
     "build": "npm run build:lib && npm run build:embed && npm run build:demo && npm run build --workspaces --if-present",
     "build:lib": "tsc -p tsconfig.lib.json && vite build --mode lib",
     "build:embed": "vite build --mode embed",
