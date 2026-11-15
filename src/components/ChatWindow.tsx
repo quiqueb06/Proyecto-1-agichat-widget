@@ -1,3 +1,4 @@
+import { TmdbAttribution } from './TmdbAttribution';
 import type { ConnectionState, Message } from '../types';
 import type { RefObject } from 'react';
 import { MessageInput } from './MessageInput';
@@ -78,6 +79,7 @@ export function ChatWindow({
       )}
 
       <MessageInput ref={inputRef} onSend={onSend} placeholder={placeholder} />
+      <TmdbAttribution />
     </section>
   );
 }

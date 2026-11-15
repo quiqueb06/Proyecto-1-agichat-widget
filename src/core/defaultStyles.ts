@@ -176,4 +176,29 @@ export const DEFAULT_STYLES = `
   .agichat-launcher { transition: transform 0.15s ease; }
   .agichat-launcher:hover { transform: scale(1.05); }
 }
+.agichat-markdown .agichat-poster {
+  display: block;
+  width: 150px;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+.agichat-credits {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: inherit;
+  border-top: 1px solid currentColor;
+}
+.agichat-credits summary { cursor: pointer; }
+.agichat-credits details[open] { max-height: 150px; overflow-y: auto; }
+.agichat-credits p { margin: 6px 0 0; }
+.agichat-credits .agichat-tmdb-logo {
+  display: block;
+  width: 64px;
+  max-width: 100%;
+  height: auto;
+  margin-top: 8px;
+}
 `;

@@ -40,6 +40,7 @@ describe('ChatWindow', () => {
     render(<ChatWindow {...baseProps} />);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Créditos · TMDB')).toBeVisible();
   });
 
   it('ejecuta onClose', () => {

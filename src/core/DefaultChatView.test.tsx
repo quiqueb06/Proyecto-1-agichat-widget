@@ -149,3 +149,8 @@ describe('DefaultChatView', () => {
     expect(screen.getByRole('button', { name: 'Abrir chat' })).toHaveFocus();
   });
 });
+
+it('muestra créditos TMDB en la vista predeterminada abierta', () => {
+  renderView();
+  expect(screen.getByText('Créditos · TMDB')).toBeVisible();
+});

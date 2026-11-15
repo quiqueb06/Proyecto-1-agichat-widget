@@ -1,3 +1,4 @@
+import { TmdbAttribution } from '../components/TmdbAttribution';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { FormEvent, KeyboardEvent } from 'react';
 import type { ConnectionState } from '../types';
@@ -161,6 +162,7 @@ export function DefaultChatView({
               Enviar
             </button>
           </form>
+          <TmdbAttribution />
         </section>
       )}
 
