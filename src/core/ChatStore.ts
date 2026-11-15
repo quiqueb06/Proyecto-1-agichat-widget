@@ -1,10 +1,19 @@
-import type { ChatTransport, ConnectionState, Message, TransportEvent } from '../types';
+import type {
+  ChatTransport,
+  ConnectionState,
+  Message,
+  OpenUrlAction,
+  TransportEvent,
+} from '../types';
+import { isOpenUrlAction } from '../transport/actions';
 import { createEmitter } from './emitter';
 import type { Listener } from './emitter';
 import type { ChatHistory } from './history';
 
 // todo lo que la ui necesita saber del chat en un solo objeto
 export interface ChatState {
+  /** Enlaces de respaldo de esta sesión; no se persisten ni ejecutan al recargar. */
+  readonly actionLinks: readonly OpenUrlAction[];
   // historial en orden de llegada (los mensajes en streaming se reemplazan por id)
   readonly messages: readonly Message[];
   // estado de la conexion que nos reporta el transporte
@@ -19,6 +28,7 @@ export interface ChatState {
 
 // eventos que se pueden escuchar con store.on(...)
 export type ChatStoreEvents = {
+  action: OpenUrlAction;
   // mensaje ya completo: uno del usuario que se mando bien o una respuesta terminada
   message: Message;
   state: ConnectionState;
@@ -38,6 +48,7 @@ const INTERRUPTED_STATES: readonly ConnectionState[] = ['disconnected', 'reconne
 // el estado nunca se modifica, siempre se crea uno nuevo, asi react
 // (useSyncExternalStore) sabe cuando volver a renderizar
 export class ChatStore {
+  private readonly seenActionUrls = new Set<string>();
   private state: ChatState;
   // cuantas respuestas del asistente estamos esperando
   // (el transporte no dice a que pregunta responde cada mensaje, por eso contamos)
@@ -56,6 +67,7 @@ export class ChatStore {
   ) {
     this.history = options.history;
     this.state = {
+      actionLinks: [],
       // si hay historial guardado se arranca con esos mensajes
       messages: this.history?.load() ?? [],
       connectionState: transport.state,
@@ -132,8 +144,15 @@ export class ChatStore {
 
   // borra todo el historial (tambien el guardado)
   clear(): void {
+    this.seenActionUrls.clear();
     this.pendingResponses = 0;
-    this.update({ messages: [], failedMessageIds: [], isTyping: false, error: null });
+    this.update({
+      messages: [],
+      actionLinks: [],
+      failedMessageIds: [],
+      isTyping: false,
+      error: null,
+    });
     this.history?.clear();
   }
 
@@ -149,6 +168,7 @@ export class ChatStore {
 
   // intenta mandar el mensaje por el transporte
   private deliver(message: Message): boolean {
+    this.seenActionUrls.clear();
     try {
       // si no hay conexion el transporte tira error (y tambien emite un evento error)
       this.transport.send(message);
@@ -175,6 +195,25 @@ export class ChatStore {
   // reparte cada evento del transporte a su funcion
   private handleEvent(event: TransportEvent): void {
     switch (event.type) {
+      case 'action': {
+        if (!isOpenUrlAction(event.action)) {
+          const error = new Error('Acción de enlace inválida.');
+          this.update({ error });
+          this.events.emit('error', error);
+          break;
+        }
+        const url = new URL(event.action.url).href;
+        if (this.seenActionUrls.has(url) || this.seenActionUrls.size >= 20) break;
+        this.seenActionUrls.add(url);
+        const action = { ...event.action, url };
+        this.update({
+          actionLinks: [...this.state.actionLinks.filter((link) => link.url !== url), action].slice(
+            -20,
+          ),
+        });
+        this.events.emit('action', action);
+        break;
+      }
       case 'state':
         this.handleState(event.state);
         break;

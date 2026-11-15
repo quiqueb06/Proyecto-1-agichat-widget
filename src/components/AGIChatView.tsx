@@ -6,6 +6,7 @@ import '../styles/theme.css';
 import '../styles/widget.css';
 
 export function AGIChatView({
+  actionLinks,
   messages,
   isTyping,
   connectionState,
@@ -57,6 +58,7 @@ export function AGIChatView({
     <div className="agichat-widget">
       {open && (
         <ChatWindow
+          actionLinks={actionLinks}
           id={windowId}
           messages={messages}
           isTyping={isTyping}

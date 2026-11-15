@@ -47,7 +47,7 @@ se puede volver a conectar explícitamente.
 
 ## Protocolo WebSocket propuesto para fase 2
 
-El backend todavía no existe en este repositorio. Debe enviar y recibir frames de
+El contrato original de fase 1 usa frames de
 texto JSON con este contrato (sin autenticación implícita):
 
 ```json
@@ -137,8 +137,17 @@ Ejemplo de `action`:
 - `label` (1 a 80 caracteres) es el texto del link de respaldo. Los navegadores pueden
   bloquear la pestaña si pasó mucho tiempo desde el último gesto del usuario, así que la
   widget **siempre** muestra también el link.
-- La widget debe aceptar este frame. Hoy `WebSocketTransport` trata cualquier `type`
-  desconocido como error (lo actualiza la Persona 3).
+- `WebSocketTransport` acepta el frame y emite un evento `action`. `ChatStore` lo
+  valida de nuevo y lo propaga hasta `AGIChat`. La widget intenta abrir la pestaña
+  con `window.open(url, '_blank', 'noopener')` y siempre conserva un enlace de respaldo.
+- En el navegador solo se aceptan URLs HTTPS sin credenciales ni puertos personalizados:
+  `imdb.com`/`www.imdb.com` (raíz o `/title/tt…/`, sin query ni fragmento) y volúmenes
+  `/books?id=…` de `books.google.com`, `books.google.es`, `books.google.com.gt`.
+  No se permiten redirecciones ni otros parámetros. Los guardrails del agente deben
+  aplicar una política compatible; imágenes TMDB no son destinos de `open_url`.
+- Acciones repetidas con la misma URL se ejecutan una vez por turno de envío local,
+  con un máximo de veinte URLs por turno. El estado conserva los veinte enlaces
+  más recientes, se vacía con `clear()` y no se persiste ni reejecuta al recargar.
 
 ### Contrato con los agentes: `AgentRunner`
 

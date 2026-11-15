@@ -1,6 +1,7 @@
 import type { Message, WebSocketTransportOptions } from '../types';
 import { BaseTransport, nonNegative } from './BaseTransport';
 import { isMessage } from './guards';
+import { isOpenUrlAction } from './actions';
 
 export class WebSocketTransport extends BaseTransport {
   private socket?: WebSocket;
@@ -88,12 +89,16 @@ export class WebSocketTransport extends BaseTransport {
       this.retry();
     };
     socket.onmessage = (event: MessageEvent<unknown>) => {
-      let frame: { type?: unknown; message?: unknown; error?: unknown };
+      let frame: { type?: unknown; message?: unknown; error?: unknown; action?: unknown };
       try {
         if (typeof event.data !== 'string') throw new Error();
         const parsed: unknown = JSON.parse(event.data);
         if (!parsed || typeof parsed !== 'object') throw new Error();
         frame = parsed;
+        if (frame.type === 'action' && isOpenUrlAction(frame.action)) {
+          this.emit({ type: 'action', action: frame.action });
+          return;
+        }
         if (frame.type === 'error' && typeof frame.error === 'string') {
           this.fail(frame.error);
           return;

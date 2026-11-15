@@ -72,6 +72,7 @@ export function createAGIChat(options: AGIChatInitOptions): AGIChatInstance {
   store.on('message', (message) => events.emit('message', message));
   store.on('state', (state) => events.emit('state', state));
   store.on('error', (error) => events.emit('error', error));
+  store.on('action', (action) => events.emit('action', action));
 
   let isOpen = defaultOpen;
   let destroyed = false;
@@ -139,6 +140,7 @@ export const AGIChat = {
     chat.on('message', (message) => globalEvents.emit('message', message));
     chat.on('state', (state) => globalEvents.emit('state', state));
     chat.on('error', (error) => globalEvents.emit('error', error));
+    chat.on('action', (action) => globalEvents.emit('action', action));
     chat.on('open', () => globalEvents.emit('open', undefined));
     chat.on('close', () => globalEvents.emit('close', undefined));
     // si alguien hace destroy() directo en la instancia, la api global tambien se entera

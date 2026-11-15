@@ -118,6 +118,27 @@ describe('MockWebSocketTransport', () => {
 });
 
 describe('WebSocketTransport', () => {
+  it('entrega acciones entre snapshots y rechaza URLs inseguras sin cerrar la conexión', () => {
+    const { transport, socket, events } = real();
+    socket.onopen!();
+    const action = {
+      type: 'open_url',
+      url: 'https://www.imdb.com/title/tt0120737/',
+      label: 'IMDb',
+    };
+    socket.onmessage!({ data: JSON.stringify({ type: 'action', action }) });
+    socket.onmessage!({
+      data: JSON.stringify({ type: 'action', action: { ...action, url: 'javascript:alert(1)' } }),
+    });
+    socket.onmessage!({
+      data: JSON.stringify({ type: 'message', message: { ...message, role: 'assistant' } }),
+    });
+    expect(events.filter((event) => event.type === 'action')).toEqual([{ type: 'action', action }]);
+    expect(events.filter((event) => event.type === 'error')).toHaveLength(1);
+    expect(events.filter((event) => event.type === 'message')).toHaveLength(1);
+    expect(transport.state).toBe('connected');
+    transport.disconnect();
+  });
   it('envía JSON, recibe snapshots y no abre conexiones duplicadas', () => {
     const { transport, events, socket } = real();
     expect(transport.state).toBe('connecting');

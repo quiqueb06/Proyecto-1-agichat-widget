@@ -201,4 +201,16 @@ export const DEFAULT_STYLES = `
   height: auto;
   margin-top: 8px;
 }
+.agichat-action-links {
+  flex-shrink: 0;
+  max-height: min(160px, 25vh);
+  overflow-y: auto;
+  padding: 8px 12px;
+  background: var(--_bg);
+  border-top: 1px solid var(--_muted);
+  font-size: 12px;
+}
+.agichat-action-links p { margin: 0 0 4px; }
+.agichat-action-links ul { margin: 0; padding-left: 20px; }
+.agichat-action-links a { color: inherit; text-decoration: underline; overflow-wrap: anywhere; }
 `;

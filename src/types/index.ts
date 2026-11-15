@@ -10,9 +10,16 @@ export interface Message {
   status: 'streaming' | 'complete';
 }
 
+export interface OpenUrlAction {
+  type: 'open_url';
+  url: string;
+  label: string;
+}
+
 export type TransportEvent =
   | { type: 'state'; state: ConnectionState }
   | { type: 'message'; message: Message }
+  | { type: 'action'; action: OpenUrlAction }
   | { type: 'error'; error: Error };
 
 export interface ChatTransport {

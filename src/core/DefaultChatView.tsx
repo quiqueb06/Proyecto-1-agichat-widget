@@ -1,4 +1,5 @@
 import { TmdbAttribution } from '../components/TmdbAttribution';
+import { ActionLinks } from '../components/ActionLinks';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { FormEvent, KeyboardEvent } from 'react';
 import type { ConnectionState } from '../types';
@@ -18,6 +19,7 @@ const STATUS_LABELS: Record<ConnectionState, string> = {
 // persona 4 termina la interfaz final; su vista solo tiene que recibir ChatViewProps.
 // los mensajes se muestran como texto plano (el markdown lo agrega persona 5)
 export function DefaultChatView({
+  actionLinks,
   messages,
   isTyping,
   connectionState,
@@ -141,6 +143,7 @@ export function DefaultChatView({
             )}
           </ol>
 
+          <ActionLinks actions={actionLinks} />
           {error && (
             <p className="agichat-error" role="alert">
               {error.message}

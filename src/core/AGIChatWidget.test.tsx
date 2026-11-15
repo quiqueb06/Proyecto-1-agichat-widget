@@ -5,6 +5,8 @@ import { AGIChatWidget } from './AGIChatWidget';
 import { ChatStore } from './ChatStore';
 import { DEFAULT_STYLES } from './defaultStyles';
 import type { ChatViewProps } from './types';
+import { AGIChatView } from '../components/AGIChatView';
+import { StrictMode } from 'react';
 
 afterEach(() => localStorage.clear());
 
@@ -17,6 +19,68 @@ function renderWithStore(props: Partial<Parameters<typeof AGIChatWidget>[0]> = {
 }
 
 describe('AGIChatWidget', () => {
+  it('muestra respaldos en la vista completa, incluso bajo StrictMode, sin reabrir al remontar', () => {
+    const open = vi.spyOn(window, 'open').mockReturnValue(null);
+    const transport = new FakeTransport();
+    const store = new ChatStore(transport);
+    const action = { type: 'open_url' as const, url: 'https://www.imdb.com/', label: 'IMDb' };
+    try {
+      const first = render(
+        <StrictMode>
+          <AGIChatWidget store={store} defaultOpen view={AGIChatView} />
+        </StrictMode>,
+      );
+      act(() => transport.receiveAction(action));
+      expect(open).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole('dialog')).toContainElement(
+        screen.getByRole('link', { name: 'IMDb' }),
+      );
+      first.unmount();
+      const second = render(<AGIChatWidget store={store} defaultOpen view={AGIChatView} />);
+      expect(screen.getByRole('link', { name: 'IMDb' })).toBeVisible();
+      expect(open).toHaveBeenCalledTimes(1);
+      second.unmount();
+    } finally {
+      store.destroy();
+      open.mockRestore();
+    }
+  });
+  it.each(['blocked', 'opened', 'throws'])(
+    'abre pestañas y conserva el respaldo cuando window.open %s',
+    (outcome) => {
+      const open = vi.spyOn(window, 'open').mockImplementation(() => {
+        if (outcome === 'throws') throw new Error('blocked');
+        return outcome === 'opened' ? window : null;
+      });
+      try {
+        const { transport, store, unmount } = renderWithStore({ defaultOpen: true });
+        const action = {
+          type: 'open_url' as const,
+          url: 'https://books.google.com/books?id=Dune',
+          label: 'Google Books',
+        };
+        act(() => transport.receiveAction(action));
+        expect(open).toHaveBeenCalledExactlyOnceWith(action.url, '_blank', 'noopener');
+        expect(screen.getByRole('link', { name: 'Google Books' })).toHaveAttribute(
+          'rel',
+          'noopener noreferrer',
+        );
+        expect(screen.getByRole('link', { name: 'Google Books' })).toHaveAttribute(
+          'href',
+          action.url,
+        );
+        act(() => transport.receiveAction(action));
+        expect(open).toHaveBeenCalledTimes(1);
+        act(() => store.clear());
+        expect(screen.queryByRole('link', { name: 'Google Books' })).not.toBeInTheDocument();
+        unmount();
+        transport.receiveAction(action);
+        expect(open).toHaveBeenCalledTimes(1);
+      } finally {
+        open.mockRestore();
+      }
+    },
+  );
   it('arranca cerrado, con estilos, tema auto y textos por defecto', async () => {
     const { container, user } = renderWithStore();
     const root = container.querySelector('.agichat')!;

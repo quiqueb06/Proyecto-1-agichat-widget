@@ -65,6 +65,25 @@ jobs:
           path: coverage/
           retention-days: 7
 
+  browser:
+    name: Acciones en Chrome y Firefox
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chrome firefox
+      - run: npm run test:browser
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: browser-test-results
+          path: test-results/
+          retention-days: 7
+
   # construye la imagen del servidor del agente y revisa que arranque y responda /health,
   # asi nos enteramos si un cambio de dependencias rompe el Dockerfile (no usa ninguna api key)
   docker:
