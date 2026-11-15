@@ -167,6 +167,9 @@ separada de la imagen de producción del agente.
 
 ## Verificación de integración (15 de noviembre de 2026)
 
+Las capturas, salidas de ejecución y resultados están versionados en
+[Evidencias de Persona 3](../../docs/evidencias/persona3/README.md).
+
 `npm test`, `npm run test:coverage`, `npm run lint`, `npm run typecheck` y
 `npm run build` pasan. Hay 340 pruebas entre widget y paquetes, más cuatro casos
 de navegador. En Books, la cobertura es 99.4 % líneas, 100 % funciones,

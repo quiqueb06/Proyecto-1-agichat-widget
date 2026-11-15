@@ -1,0 +1,7 @@
+
+Running 2 tests using 2 workers
+
+  ✓  1 [firefox-allowed] › tests/browser/allowed.spec.ts:4:1 › abre exactamente dos pestañas automáticamente, aisladas y sin duplicados (8.5s)
+  ✓  2 [firefox-blocked] › tests/browser/actions.spec.ts:4:1 › respuesta tardía: conserva respaldos cuando se rechaza window.open y permite abrirlos con click (14.2s)
+
+  2 passed (20.6s)

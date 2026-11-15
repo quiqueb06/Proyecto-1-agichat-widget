@@ -1,0 +1,284 @@
+Código verificado: 0f55dc1; copia limpia sin credenciales ni documentos locales ajenos.
+
+> agichat-widget@0.1.0 ci
+> npm run lint && npm run format:check && npm run typecheck && npm run test:coverage && npm run build
+
+
+> agichat-widget@0.1.0 lint
+> eslint . --max-warnings 0
+
+
+> agichat-widget@0.1.0 format:check
+> prettier --check .
+
+Checking formatting...
+All matched files use Prettier code style!
+
+> agichat-widget@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json && npm run typecheck --workspaces --if-present
+
+
+> @agichat/agent-server@0.1.0 typecheck
+> tsc -p tsconfig.json
+
+
+> @agichat/mcp-books@0.1.0 typecheck
+> tsc -p tsconfig.json
+
+
+> @agichat/mcp-tmdb@0.1.0 typecheck
+> tsc -p tsconfig.json
+
+
+> agichat-widget@0.1.0 test:coverage
+> vitest run --coverage && npm run test:coverage --workspaces --if-present
+
+
+ RUN  v5.0.1 C:/Users/Asus/AppData/Local/Temp/agichat-persona3-qa
+      Coverage enabled with v8
+
+
+ Test Files  25 passed (25)
+      Tests  160 passed (160)
+   Start at  14:52:45
+   Duration  43.88s (environment 62%, import 21%, setup 10%, tests 5%, worker 1%, transform 1%)
+
+Environment  jsdom was created 25 times · 261.86s total, 62% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   99.12 |    97.56 |   99.35 |   99.39 |
+ src/components    |      95 |     90.9 |   95.65 |   94.73 |
+  AGIChatView.tsx  |   94.73 |    85.71 |     100 |   94.73 | 51
+  ChatWindow.tsx   |     100 |    66.66 |     100 |     100 | 79
+  MessageInput.tsx |      90 |    83.33 |     100 |      90 | 22
+  MessageList.tsx  |   85.71 |    81.81 |      75 |   85.71 | 58
+ src/transport     |   98.78 |    97.54 |     100 |     100 |
+  ...tTransport.ts |   97.77 |    95.55 |     100 |     100 | 50,65
+  actions.ts       |     100 |    96.66 |     100 |     100 | 27
+-------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 99.12% ( 567/572 )
+Branches     : 97.56% ( 361/370 )
+Functions    : 99.35% ( 155/156 )
+Lines        : 99.39% ( 493/496 )
+================================================================================
+
+> @agichat/agent-server@0.1.0 test:coverage
+> vitest run --coverage
+
+
+ RUN  v5.0.1 C:/Users/Asus/AppData/Local/Temp/agichat-persona3-qa/packages/agent-server
+      Coverage enabled with v8
+
+
+ Test Files  9 passed (9)
+      Tests  73 passed (73)
+   Start at  14:53:32
+   Duration  2.88s (import 45%, tests 28%, transform 20%, worker 7%)
+
+ % Coverage report from v8
+------------------|---------|----------|---------|---------|-------------------
+File              | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+------------------|---------|----------|---------|---------|-------------------
+------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 100% ( 250/250 )
+Branches     : 100% ( 94/94 )
+Functions    : 100% ( 66/66 )
+Lines        : 100% ( 225/225 )
+================================================================================
+
+> @agichat/mcp-books@0.1.0 test:coverage
+> vitest run --coverage
+
+
+ RUN  v5.0.1 C:/Users/Asus/AppData/Local/Temp/agichat-persona3-qa/packages/mcp-books
+      Coverage enabled with v8
+
+
+ Test Files  4 passed (4)
+      Tests  24 passed (24)
+   Start at  14:53:36
+   Duration  3.09s (tests 50%, import 38%, transform 9%, worker 4%)
+
+ % Coverage report from v8
+----------------|---------|----------|---------|---------|-------------------
+File            | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+----------------|---------|----------|---------|---------|-------------------
+All files       |   99.49 |     94.2 |     100 |    99.4 |
+ bookService.ts |     100 |    94.11 |     100 |     100 | 34,41
+ client.ts      |   98.76 |       94 |     100 |   98.59 | 113
+ comparison.ts  |     100 |    93.75 |     100 |     100 | 36
+ server.ts      |     100 |       50 |     100 |     100 | 33
+----------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 99.49% ( 196/197 )
+Branches     : 94.2% ( 130/138 )
+Functions    : 100% ( 37/37 )
+Lines        : 99.4% ( 168/169 )
+================================================================================
+
+> @agichat/mcp-tmdb@0.1.0 test:coverage
+> vitest run --coverage
+
+
+ RUN  v5.0.1 C:/Users/Asus/AppData/Local/Temp/agichat-persona3-qa/packages/mcp-tmdb
+      Coverage enabled with v8
+
+
+ Test Files  5 passed (5)
+      Tests  83 passed (83)
+   Start at  14:53:40
+   Duration  2.80s (tests 45%, import 37%, transform 13%, worker 5%)
+
+ % Coverage report from v8
+------------------|---------|----------|---------|---------|-------------------
+File              | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+------------------|---------|----------|---------|---------|-------------------
+All files         |   97.01 |    94.69 |   97.61 |   99.42 |
+ index.ts         |      50 |      100 |       0 |     100 |
+ movieService.ts  |     100 |    98.14 |     100 |     100 | 121
+ server.ts        |     100 |       50 |     100 |     100 | 26
+ tmdbClient.ts    |   94.11 |    90.56 |     100 |   98.57 | 107
+------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 97.01% ( 195/201 )
+Branches     : 94.69% ( 125/132 )
+Functions    : 97.61% ( 41/42 )
+Lines        : 99.42% ( 172/173 )
+================================================================================
+
+> agichat-widget@0.1.0 build
+> npm run build:lib && npm run build:embed && npm run build:demo && npm run build --workspaces --if-present
+
+
+> agichat-widget@0.1.0 build:lib
+> tsc -p tsconfig.lib.json && vite build --mode lib
+
+vite v8.3.0 building client environment for lib...
+transforming...
+✓ 491 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/agichat.css    8.61 kB │ gzip:   2.20 kB
+dist/agichat.js   505.04 kB │ gzip: 161.03 kB
+
+transforming...
+✓ 491 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/agichat.css        8.61 kB │ gzip:   2.20 kB
+dist/agichat.umd.cjs  397.65 kB │ gzip: 143.42 kB
+
+✓ built in 1.26s
+
+> agichat-widget@0.1.0 build:embed
+> vite build --mode embed
+
+vite v8.3.0 building client environment for embed...
+transforming...
+✓ 493 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/agichat.embed.js  613.68 kB │ gzip: 211.42 kB
+
+✓ built in 448ms
+
+> agichat-widget@0.1.0 build:demo
+> vite build --mode demo
+
+vite v8.3.0 building client environment for demo...
+transforming...
+✓ 507 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-demo/index.html                   0.40 kB │ gzip:   0.27 kB
+dist-demo/embed.html                   2.79 kB │ gzip:   1.19 kB
+dist-demo/agichat.embed.js           613.68 kB
+dist-demo/assets/index-CYlu8m20.css    8.73 kB │ gzip:   2.25 kB
+dist-demo/assets/index-YVSllXd7.js   616.30 kB │ gzip: 211.88 kB
+
+✓ built in 560ms
+[plugin builtin:vite-reporter]
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+> @agichat/agent-server@0.1.0 build
+> tsc -p tsconfig.build.json
+
+
+> @agichat/mcp-books@0.1.0 build
+> tsc -p tsconfig.build.json
+
+
+> @agichat/mcp-tmdb@0.1.0 build
+> tsc -p tsconfig.build.json
+
+
+> agichat-widget@0.1.0 test
+> vitest run && npm run test --workspaces --if-present
+
+
+ RUN  v5.0.1 C:/Users/Asus/AppData/Local/Temp/agichat-persona3-qa
+
+
+ Test Files  25 passed (25)
+      Tests  160 passed (160)
+   Start at  14:54:06
+   Duration  30.42s (environment 66%, import 14%, setup 12%, tests 6%, transform 1%, worker 1%)
+
+Environment  jsdom was created 25 times · 176.38s total, 66% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+
+
+> @agichat/agent-server@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.1 C:/Users/Asus/AppData/Local/Temp/agichat-persona3-qa/packages/agent-server
+
+
+ Test Files  9 passed (9)
+      Tests  73 passed (73)
+   Start at  14:54:38
+   Duration  2.00s (import 42%, tests 34%, transform 22%, worker 2%)
+
+
+> @agichat/mcp-books@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.1 C:/Users/Asus/AppData/Local/Temp/agichat-persona3-qa/packages/mcp-books
+
+
+ Test Files  4 passed (4)
+      Tests  24 passed (24)
+   Start at  14:54:41
+   Duration  2.16s (tests 51%, import 40%, transform 8%, worker 1%)
+
+
+> @agichat/mcp-tmdb@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.1 C:/Users/Asus/AppData/Local/Temp/agichat-persona3-qa/packages/mcp-tmdb
+
+
+ Test Files  5 passed (5)
+      Tests  83 passed (83)
+   Start at  14:54:44
+   Duration  2.21s (tests 44%, import 41%, transform 14%, worker 1%)
+
+RESULTADO: npm run ci=0; npm test=0
