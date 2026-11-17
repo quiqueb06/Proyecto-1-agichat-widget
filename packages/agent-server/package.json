@@ -14,7 +14,8 @@
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "evals": "tsx src/evals/cli.ts"
   },
   "dependencies": {
     "ws": "^8.23.0",

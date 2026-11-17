@@ -26,3 +26,5 @@ export { isOriginAllowed } from './gateway/server.js';
 export { RateLimiter } from './gateway/RateLimiter.js';
 export type { RateLimiterOptions } from './gateway/RateLimiter.js';
 export type { ConnectionLimits } from './gateway/connection.js';
+// guardrails de seguridad (persona 5): owasp llm01 y llm07, ver docs/SEGURIDAD.md
+export * from './security/index.js';

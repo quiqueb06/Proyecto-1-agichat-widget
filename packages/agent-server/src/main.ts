@@ -2,6 +2,7 @@ import { EchoAgent } from './agent/EchoAgent.js';
 import { loadConfig } from './config.js';
 import { createGateway } from './gateway/server.js';
 import { createLogger } from './logger.js';
+import { createSecurityContext } from './security/index.js';
 
 // arranque real del servidor: npm run dev -w @agichat/agent-server
 // (este archivo solo conecta las piezas; la logica esta en los demas modulos y tiene tests)
@@ -17,8 +18,14 @@ try {
 const logger = createLogger();
 const config = loadConfig();
 
-// por ahora el agente es el echo de pruebas; la persona 4 lo cambia por el orquestador
-const gateway = createGateway({ config, agent: new EchoAgent(), logger });
+// guardrails (persona 5, docs/SEGURIDAD.md). el mismo contexto se le pasa al orquestador
+// para endurecer sus prompts (security.hardenPrompt) y envolver los clientes mcp
+// (security.guardTools); así el canary del prompt es el que busca el filtro de salida
+const security = createSecurityContext({ logger });
+
+// por ahora el agente es el echo de pruebas; la persona 4 lo cambia por el orquestador.
+// el agente que sea, siempre va envuelto en los guardrails
+const gateway = createGateway({ config, agent: security.guardAgent(new EchoAgent()), logger });
 await gateway.listen();
 
 // apagado ordenado: cerramos las conexiones antes de salir (ctrl+c o la plataforma)

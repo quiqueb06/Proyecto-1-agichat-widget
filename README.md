@@ -108,4 +108,5 @@ Seguimos **GitHub Flow**. Lee [CONTRIBUTING.md](CONTRIBUTING.md) antes de abrir 
 - [Conexión, Mock API y protocolo WebSocket](docs/TRANSPORT.md)
 - [Arquitectura](docs/ARQUITECTURA.md)
 - [Despliegue del servidor del agente (Docker)](docs/DESPLIEGUE.md)
+- [Seguridad (OWASP LLM01 y LLM07) y evals](docs/SEGURIDAD.md)
 - [Guía para herramientas agénticas](AGENTS.md)

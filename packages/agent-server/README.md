@@ -83,6 +83,10 @@ interface AgentRunner {
 
 Para conectar el agente real basta con cambiar `new EchoAgent()` en `src/main.ts` por el orquestador.
 
+## Seguridad y evals
+
+Todo agente que recibe el gateway va envuelto en los guardrails de `src/security/` (filtro de entrada, filtro de salida con canary, allowlist de urls y de herramientas). La suite de evals está en `src/evals/` y se corre con `npm run evals` desde la raíz. Amenazas, defensas, cómo integrarlo con el orquestador y resultados: [docs/SEGURIDAD.md](../../docs/SEGURIDAD.md).
+
 ## Logs
 
 Cada línea es un JSON con `time`, `level` y `event`:

@@ -42,6 +42,7 @@
     "test": "vitest run && npm run test --workspaces --if-present",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage && npm run test:coverage --workspaces --if-present",
+    "evals": "npm run evals -w @agichat/agent-server --",
     "ci": "npm run lint && npm run format:check && npm run typecheck && npm run test:coverage && npm run build",
     "test:browser": "npm run build:embed && playwright test",
     "test:browser:firefox:docker": "docker build -f tests/browser/Dockerfile -t agichat-browser-tests . && docker run --rm agichat-browser-tests"

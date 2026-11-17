@@ -6,3 +6,6 @@ test-results
 playwright-report
 package-lock.json
 .vs/
+# reportes generados por npm run evals
+docs/evals
+evals-reports
