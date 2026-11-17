@@ -167,7 +167,10 @@ El contenido recibido se trata como no confiable. `rehype-sanitize` sanitiza el 
 
 En el proyecto 2 la widget deja de hablar con el mock y se conecta a un **sistema multiagente** que recomienda películas con TMDB y las compara con su libro en Google Books. El backend vive en `packages/` como npm workspaces y la widget no cambia de arquitectura. Solo usa `WebSocketTransport` con el endpoint del servidor y recibe un frame nuevo, `action`, definido en [TRANSPORT.md](TRANSPORT.md).
 
-Esta sección conserva el detalle técnico de la arquitectura objetivo, separado del HLD de la sección 3. Algunas piezas de Personas 3, 4 y 5 siguen pendientes de integración.
+Esta sección conserva el detalle técnico de la arquitectura objetivo, separado del HLD de la sección 3.
+El MCP de libros, la preparación de comparación y las acciones de la widget están implementados
+(ver [contratos de libros](../packages/mcp-books/README.md)). La conexión con el orquestador
+y los guardrails de Personas 4 y 5 sigue pendiente; el arranque actual usa `EchoAgent`.
 
 ### 9.1 Diagrama de componentes (detalle técnico)
 

@@ -13,6 +13,7 @@ export { AGIChatView } from './components/AGIChatView';
 
 export type {
   Message,
+  OpenUrlAction,
   ChatTransport,
   WidgetConfig,
   ConnectionState,

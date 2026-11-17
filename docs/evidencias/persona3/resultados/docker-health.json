@@ -1,0 +1,12 @@
+{
+  "recordedAtUTC": "2026-11-15T20:53:54.1988259Z",
+  "image": "agichat-persona3-check:latest",
+  "imageId": "sha256:a9d4c8fb5cacdc40352f865c3e1bb00c352640b3c3a2aadf231532f21afb8f14",
+  "scope": "Arranque de la imagen local construida durante la verificación de Persona 3",
+  "health": {
+    "status": "ok",
+    "connections": 0
+  },
+  "localEnvPresent": false,
+  "result": "passed"
+}

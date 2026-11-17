@@ -13,11 +13,55 @@ function setup() {
 }
 
 describe('ChatStore', () => {
+  it('propaga acciones, conserva respaldos sin afectar streaming y deduplica por turno', () => {
+    const { transport, store } = setup();
+    store.connect();
+    store.send('Dune');
+    const action = {
+      type: 'open_url' as const,
+      url: 'https://www.imdb.com/title/tt0120737/',
+      label: 'IMDb',
+    };
+    const listener = vi.fn();
+    store.on('action', listener);
+    transport.receiveAction(action);
+    transport.receiveAction(action);
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(store.getSnapshot()).toMatchObject({ isTyping: true, actionLinks: [action] });
+    expect(store.getSnapshot().messages).toHaveLength(1);
+    store.send('Otra consulta');
+    transport.receiveAction(action);
+    expect(listener).toHaveBeenCalledTimes(2);
+    expect(store.getSnapshot().actionLinks).toHaveLength(1);
+    transport.receiveAction({ ...action, url: 'https://evil.test/' });
+    expect(store.getSnapshot().error?.message).toContain('inválida');
+    expect(listener).toHaveBeenCalledTimes(2);
+    store.clear();
+    expect(store.getSnapshot().actionLinks).toEqual([]);
+    store.destroy();
+    transport.receiveAction(action);
+    expect(listener).toHaveBeenCalledTimes(2);
+  });
+  it('limita acciones y enlaces de respaldo a veinte sin persistirlos', () => {
+    const { store, transport } = setup();
+    const listener = vi.fn();
+    store.on('action', listener);
+    for (let i = 0; i < 25; i++)
+      transport.receiveAction({
+        type: 'open_url',
+        url: `https://books.google.com/books?id=id${i}`,
+        label: 'Libro',
+      });
+    expect(listener).toHaveBeenCalledTimes(20);
+    expect(store.getSnapshot().actionLinks).toHaveLength(20);
+    store.destroy();
+  });
   it('parte del estado actual del transporte y lo sigue', () => {
     const { transport, store } = setup();
     const states = vi.fn();
     store.on('state', states);
     expect(store.getSnapshot()).toEqual({
+      actionLinks: [],
       messages: [],
       connectionState: 'disconnected',
       isTyping: false,

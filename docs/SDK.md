@@ -26,6 +26,37 @@ flowchart LR
 - **`AGIChatWidget`**: une el store con una vista que cumple `ChatViewProps`.
 - **`AGIChat`**: API global para sitios sin React; monta el widget en un Shadow DOM.
 
+## Acciones para abrir enlaces (protocolo v2)
+
+`ChatStore`, la instancia devuelta por `AGIChat.init()` y la API global exponen
+el evento `action`, con el tipo público `OpenUrlAction`:
+
+```ts
+const stop = AGIChat.on('action', ({ url, label }) => {
+  // Observación opcional. AGIChatWidget ya intenta abrir la URL automáticamente.
+  // No volver a llamar window.open aquí para evitar aperturas duplicadas.
+  document.querySelector('[data-last-action]')?.setAttribute('aria-label', label + ': ' + url);
+});
+// Para dejar de escuchar: stop(); o AGIChat.off('action', listener).
+stop();
+```
+
+La apertura pertenece a `AGIChatWidget`, por lo que también funciona con el componente
+React directo y vistas personalizadas. El store solo valida, conserva enlaces en
+`getSnapshot().actionLinks` y emite eventos; no depende de APIs del navegador para abrirlos.
+Los consumidores de `useChat` sin `AGIChatWidget` pueden usar `actionLinks` y escuchar
+`store.on('action', ...)` para implementar su propia presentación.
+Las dos vistas incluidas muestran los respaldos dentro del diálogo. Las vistas
+personalizadas reciben `ChatViewProps.actionLinks` (opcional por compatibilidad) y
+deben renderizar estos enlaces como anclas con `target="_blank" rel="noopener noreferrer"`.
+
+El navegador puede bloquear pestañas que se solicitan después de una respuesta asíncrona.
+No se puede garantizar la apertura automática ni deducir el bloqueo únicamente del
+retorno `null` de `window.open` con `noopener`. Siempre aparece un enlace accesible
+con `target="_blank" rel="noopener noreferrer"`, junto a la indicación de permitir
+ventanas emergentes. Los enlaces se muestran al abrir el chat y se eliminan con `clear()`.
+Ver [TRANSPORT.md](TRANSPORT.md) para la allowlist, deduplicación y límites.
+
 ## Integración con React
 
 ```tsx

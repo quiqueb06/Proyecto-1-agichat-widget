@@ -1,2 +1,5 @@
-// punto de entrada del servidor mcp de libros (google books), lo implementa la persona 3
-export const SERVER_NAME = 'agichat-mcp-books';
+import { serveStdio } from '@modelcontextprotocol/server/stdio';
+import { createServer } from './server.js';
+
+// stdout queda reservado para JSON-RPC; el proceso padre proporciona el entorno.
+await serveStdio(() => createServer());

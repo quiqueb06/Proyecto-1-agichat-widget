@@ -1,0 +1,33 @@
+{
+  "recordedAtUTC": "2026-11-15T20:53:20.924Z",
+  "sourceCommit": "0f55dc1",
+  "kind": "manual-live-mcp-check",
+  "tools": ["search_book", "get_book_details", "compare_movie_book"],
+  "search": {
+    "results": 3
+  },
+  "details": {
+    "id": "JhJ7cgAACAAJ",
+    "title": "Dune",
+    "authors": ["Frank Herbert"],
+    "rating": null,
+    "ratings_count": null,
+    "descriptionCharacters": 706,
+    "infoLink": "https://books.google.com/books?id=JhJ7cgAACAAJ"
+  },
+  "comparison": {
+    "found": true,
+    "relationship": "candidate",
+    "match": {
+      "title": true,
+      "author": true
+    },
+    "ratings": {
+      "scale": 10,
+      "movie": 8,
+      "book": null
+    }
+  },
+  "result": "passed",
+  "note": "Consulta manual real por MCP stdio, fuera de tests y CI. No se registra la key."
+}

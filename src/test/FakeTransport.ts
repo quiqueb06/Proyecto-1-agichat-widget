@@ -1,9 +1,12 @@
 import { BaseTransport } from '../transport/BaseTransport';
-import type { ConnectionState, Message } from '../types';
+import type { ConnectionState, Message, OpenUrlAction } from '../types';
 
 // transporte falso para los tests: no usa timers, nosotros decidimos cuando pasa cada cosa.
 // hereda de BaseTransport (de persona 2) para portarse igual que los transportes reales
 export class FakeTransport extends BaseTransport {
+  receiveAction(action: OpenUrlAction): void {
+    this.emit({ type: 'action', action });
+  }
   // todo lo que se mando queda aqui para revisarlo en los tests
   readonly sent: Message[] = [];
   // si es true, el siguiente send falla como si se hubiera caido el socket

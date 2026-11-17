@@ -1,4 +1,4 @@
-import type { ConnectionState, Message, WidgetConfig } from '../types';
+import type { ConnectionState, Message, OpenUrlAction, WidgetConfig } from '../types';
 
 export type Theme = 'light' | 'dark' | 'auto';
 
@@ -26,6 +26,8 @@ export type AGIChatOptions = WidgetConfig &
 // contrato entre la logica (persona 3) y la interfaz (persona 4).
 // cualquier componente que reciba estas props se puede usar como vista del widget
 export interface ChatViewProps {
+  /** Enlaces de respaldo de acciones; una vista propia debe mostrarlos. */
+  actionLinks?: readonly OpenUrlAction[];
   // datos del chat
   messages: readonly Message[];
   isTyping: boolean;

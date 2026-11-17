@@ -1,5 +1,6 @@
 import { TmdbAttribution } from './TmdbAttribution';
-import type { ConnectionState, Message } from '../types';
+import { ActionLinks } from './ActionLinks';
+import type { ConnectionState, Message, OpenUrlAction } from '../types';
 import type { RefObject } from 'react';
 import { MessageInput } from './MessageInput';
 import { MessageList } from './MessageList';
@@ -13,6 +14,7 @@ const STATUS_LABELS: Record<ConnectionState, string> = {
 };
 
 type ChatWindowProps = {
+  actionLinks?: readonly OpenUrlAction[];
   id: string;
   messages: readonly Message[];
   isTyping?: boolean;
@@ -29,6 +31,7 @@ type ChatWindowProps = {
 };
 
 export function ChatWindow({
+  actionLinks,
   id,
   messages,
   isTyping = false,
@@ -72,6 +75,7 @@ export function ChatWindow({
         onRetry={onRetry}
       />
 
+      <ActionLinks actions={actionLinks} />
       {error && (
         <p className="agichat-error" role="alert">
           {error.message}

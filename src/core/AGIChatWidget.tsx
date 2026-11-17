@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { ComponentType } from 'react';
 import type { ChatStore } from './ChatStore';
 import { DefaultChatView } from './DefaultChatView';
@@ -42,6 +42,18 @@ export function AGIChatWidget(props: AGIChatWidgetProps) {
   const [store] = useState(() => ('store' in props ? props.store : createStoreFromOptions(props)));
   const chat = useChat(store);
 
+  useEffect(
+    () =>
+      store.on('action', (action) => {
+        try {
+          window.open(action.url, '_blank', 'noopener');
+        } catch {
+          // El respaldo ya está en el store, incluso si el navegador rechaza la apertura.
+        }
+      }),
+    [store],
+  );
+
   // si nos pasan `open` manda el padre, si no lo manejamos aqui adentro
   const [innerOpen, setInnerOpen] = useState(defaultOpen);
   const isOpen = controlledOpen ?? innerOpen;
@@ -57,6 +69,7 @@ export function AGIChatWidget(props: AGIChatWidgetProps) {
     <div className="agichat" data-theme={theme}>
       {styles && <style>{styles}</style>}
       <View
+        actionLinks={chat.actionLinks}
         messages={chat.messages}
         isTyping={chat.isTyping}
         connectionState={chat.connectionState}
