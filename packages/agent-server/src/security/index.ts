@@ -20,12 +20,14 @@ export {
   AGENT_TOOLS,
   TOOL_ARGUMENT_SCHEMAS,
   createToolPolicy,
+  guardMcpClient,
   guardToolCaller,
 } from './toolPolicy.js';
 export type { AgentKind, ToolCallResult, ToolCaller, ToolName, ToolPolicy } from './toolPolicy.js';
 export {
   UNTRUSTED_CLOSE,
   UNTRUSTED_OPEN,
+  delimitFreeText,
   sanitizeUntrustedValue,
   wrapUntrusted,
 } from './untrusted.js';

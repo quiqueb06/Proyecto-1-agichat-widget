@@ -46,9 +46,11 @@ flowchart LR
 ```
 
 El diagrama representa la arquitectura objetivo, no certifica que todos los servicios
-estén integrados. MCP TMDB, pósters y créditos están implementados. El arranque actual
-del backend todavía usa el agente de prueba; orquestación, Groq, Books y acciones
-frontend quedan a cargo de las otras personas. La caché TMDB es local a cada proceso.
+estén integrados. MCP TMDB, pósters y créditos están implementados. El diagrama representa
+la arquitectura actualmente integrada del Proyecto 2. El backend utiliza el `Orchestrator`
+como implementación de `AgentRunner`, integra Groq mediante `LLMClient`, y delega en `MovieAgent`
+y `BookComparisonAgent`, que consumen los servidores MCP de TMDB y Google Books respectivamente.
+La caché de cada MCP es local a su proceso..
 
 ### 3.1 Detalle interno del SDK (bajo nivel)
 
@@ -221,7 +223,93 @@ flowchart TB
   Widget -.->|"frame action: open_url"| Pestanas
 ```
 
-### 9.2 Piezas y responsabilidades
+### 9.2 Arquitectura de bajo nivel del sistema multiagente
+
+El sistema utiliza una arquitectura **multiagente jerárquica y centralizada**.
+
+Es **jerárquica** porque el `Orchestrator` actúa como agente coordinador de nivel superior y delega las tareas a dos subagentes especializados: `MovieAgent` y `BookComparisonAgent`.
+
+Es **centralizada** porque los subagentes no se comunican directamente entre sí. Toda coordinación, delegación y combinación de resultados ocurre a través del `Orchestrator`.
+
+Los servidores MCP no se consideran agentes. Son servidores de herramientas reutilizables que abstraen el acceso a TMDB y Google Books y pueden ser consumidos por otros agentes en el futuro.
+
+```mermaid
+flowchart TB
+  subgraph Navegador["Navegador del usuario"]
+    Sitio["Sitio del cliente"]
+    Widget["Widget AGIChat<br/>WebSocketTransport"]
+    Pestanas["Pestañas nuevas<br/>IMDb / Google Books"]
+  end
+
+  subgraph Backend["agent-server"]
+    Gateway["Gateway WebSocket"]
+    Sesiones[("SessionStore")]
+    Orquestador["Orchestrator<br/>Agente coordinador"]
+
+    MovieAgent["MovieAgent<br/>Subagente de películas"]
+    BookAgent["BookComparisonAgent<br/>Subagente de libros y comparación"]
+
+    LLMContract["LLMClient"]
+    GroqClient["GroqClient"]
+    MCPClientTMDB["MCPClient"]
+    MCPClientBooks["MCPClient"]
+  end
+
+  subgraph Herramientas["Servidores MCP"]
+    McpTmdb["mcp-tmdb"]
+    McpBooks["mcp-books"]
+  end
+
+  Groq["Groq API"]
+  TMDB["TMDB API"]
+  Books["Google Books API"]
+  Imagenes["image.tmdb.org<br/>pósters"]
+
+  Sitio -->|"monta"| Widget
+  Widget <-->|"WebSocket"| Gateway
+  Gateway <-->|"historial"| Sesiones
+  Gateway -->|"AgentRunner.respond()"| Orquestador
+
+  Orquestador -->|"consulta de películas"| MovieAgent
+  Orquestador -->|"comparación"| MovieAgent
+  Orquestador -->|"contexto TMDB + consulta"| BookAgent
+
+  Orquestador --> LLMContract
+  MovieAgent --> LLMContract
+  BookAgent --> LLMContract
+
+  LLMContract --> GroqClient
+  GroqClient -->|"HTTPS"| Groq
+
+  MovieAgent --> MCPClientTMDB
+  MCPClientTMDB -->|"MCP stdio"| McpTmdb
+  McpTmdb -->|"HTTPS"| TMDB
+
+  BookAgent --> MCPClientBooks
+  MCPClientBooks -->|"MCP stdio"| McpBooks
+  McpBooks -->|"HTTPS"| Books
+
+  MovieAgent -->|"contexto estructurado"| Orquestador
+  BookAgent -->|"comparación y veredicto"| Orquestador
+
+  Orquestador -->|"text / action"| Gateway
+  Widget -.->|"póster Markdown"| Imagenes
+  Widget -.->|"open_url"| Pestanas
+```
+
+#### Flujo de comparación película-libro
+
+Cuando el usuario solicita una comparación, la coordinación ocurre de forma secuencial:
+
+1. El `Orchestrator` delega primero en `MovieAgent`.
+2. `MovieAgent` consulta las herramientas del MCP de TMDB y devuelve contexto estructurado de la película.
+3. El `Orchestrator` entrega ese contexto a `BookComparisonAgent`.
+4. `BookComparisonAgent` utiliza las herramientas del MCP de Google Books para buscar y comparar el libro.
+5. El resultado vuelve al `Orchestrator`, que entrega una única respuesta final al usuario.
+
+Esta separación permite que cada agente tenga acceso únicamente a las herramientas de su dominio y evita que los subagentes dependan directamente entre sí.
+
+### 9.3 Piezas y responsabilidades
 
 | Pieza                                | Dónde                                      | Responsabilidad                                                                                                                                                                                |
 | ------------------------------------ | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -233,7 +321,7 @@ flowchart TB
 | `LLMClient`                          | `packages/agent-server` (P4)               | Abstrae el proveedor (Groq). En tests se usa `FakeLLM`.                                                                                                                                        |
 | Servidores MCP                       | `packages/mcp-tmdb`, `packages/mcp-books`  | Exponen las herramientas de películas y libros con esquemas `zod`. Guardan en caché las respuestas de las APIs externas.                                                                       |
 
-### 9.3 Flujo de un turno
+### 9.4 Flujo de un turno
 
 1. El usuario escribe en la widget. `WebSocketTransport` manda `{ "type": "message" }` al gateway.
 2. El origen ya se revisó al abrir la conexión (403 si no está permitido), y un frame más grande que `MAX_PAYLOAD_BYTES` cierra la conexión. El gateway valida cada frame: JSON, forma, rol `user`, largo, mensajes vacíos y rate limit. Si algo falla, responde con un mensaje completo del asistente más un frame `error`, sin cerrar la conexión.
@@ -242,7 +330,7 @@ flowchart TB
 5. Cada evento `text` se acumula y el gateway manda un snapshot con el mismo `id`, como mucho cada 50 ms. Cada evento `action` se valida (URL `https` y etiqueta corta) y se reenvía a la widget.
 6. Al terminar, el gateway manda el snapshot `complete` y guarda la respuesta en la sesión. Si el usuario se desconecta a la mitad, el `AbortSignal` detiene al agente para que no siga gastando requests.
 
-### 9.4 Por qué escala
+### 9.5 Por qué escala
 
 - **El gateway se puede replicar horizontalmente.**
   - Una sesión vive lo mismo que su conexión WebSocket, y esa conexión siempre está en la misma instancia. Por eso varias réplicas detrás de un balanceador funcionan sin compartir estado ni usar sticky sessions: cada conexión nueva puede caer en cualquier réplica.
@@ -271,7 +359,7 @@ flowchart TB
   - La allowlist de `Origin`, el `maxPayload` y la validación con `zod` rechazan el tráfico inválido antes de que llegue a los agentes.
   - Las API keys solo existen en el servidor, nunca en la widget ni en la imagen Docker.
 
-### 9.5 Límites actuales
+### 9.6 Límites actuales
 
 - El `SessionStore` es en memoria, así que una conversación se pierde al reconectar. Por eso la demo no guarda historial en el navegador cuando usa el agente real.
 - El rate limit es por conexión y el contador de cuotas de cada MCP es por proceso. Con varias réplicas, un límite global (por ejemplo, requests diarias de Groq) necesitaría un contador compartido, como Redis.

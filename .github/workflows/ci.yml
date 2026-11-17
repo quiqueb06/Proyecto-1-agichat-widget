@@ -117,8 +117,11 @@ jobs:
       - uses: actions/checkout@v7
       - run: docker build -f packages/agent-server/Dockerfile -t agichat-agent .
       - name: Arranca y responde /health
+        # main.ts exige GROQ_API_KEY y TMDB_API_TOKEN para arrancar. aqui van valores falsos:
+        # /health no llama a ninguna api, asi que el ci sigue sin usar keys reales
         run: |
-          docker run -d --name agente -p 8787:8787 agichat-agent
+          docker run -d --name agente -p 8787:8787 \
+            -e GROQ_API_KEY=ci-sin-key -e TMDB_API_TOKEN=ci-sin-token agichat-agent
           for i in $(seq 1 20); do
             if curl -fs http://localhost:8787/health; then exit 0; fi
             sleep 1

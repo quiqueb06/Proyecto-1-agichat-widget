@@ -27,6 +27,12 @@ const envSchema = z.object({
   // cada cuanto mandamos un snapshot del streaming a la widget
   STREAM_THROTTLE_MS: z.coerce.number().int().min(0).default(50),
 
+  // ---------- LLM / Groq ----------
+
+  GROQ_API_KEY: z.string().min(1).optional(),
+  GROQ_MODEL: z.string().min(1).default('openai/gpt-oss-120b'),
+  GROQ_BASE_URL: z.string().url().default('https://api.groq.com/openai/v1'),
+
   // ---------- limites (seguridad y cuidar las cuotas gratis de groq, tmdb y books) ----------
 
   // paginas que pueden abrir el websocket (cabecera Origin). "*" = cualquiera.
@@ -54,6 +60,11 @@ export interface GatewayConfig {
   sessionTtlMs: number;
   maxHistoryMessages: number;
   streamThrottleMs: number;
+  groq: {
+    apiKey?: string;
+    model: string;
+    baseUrl: string;
+  };
   allowedOrigins: string[];
   maxConnections: number;
   maxPayloadBytes: number;
@@ -78,6 +89,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): GatewayConfig 
     sessionTtlMs: e.SESSION_TTL_MS,
     maxHistoryMessages: e.MAX_HISTORY_MESSAGES,
     streamThrottleMs: e.STREAM_THROTTLE_MS,
+    groq: {
+      apiKey: e.GROQ_API_KEY,
+      model: e.GROQ_MODEL,
+      baseUrl: e.GROQ_BASE_URL,
+    },
     allowedOrigins: e.ALLOWED_ORIGINS,
     maxConnections: e.MAX_CONNECTIONS,
     maxPayloadBytes: e.MAX_PAYLOAD_BYTES,

@@ -66,3 +66,33 @@ export function wrapUntrusted(source: string, data: unknown, options: WrapOption
 
   return `${header}\n${notice}\n${body}\n${UNTRUSTED_CLOSE}`;
 }
+
+// campos de texto libre de tmdb y google books: los escribe cualquiera
+const FREE_TEXT_KEYS = new Set(['overview', 'description']);
+
+function inlineBlock(source: string, text: string): string {
+  const suspicious = detectInjection(text).flagged ? ' sospechoso="true"' : '';
+  return `${UNTRUSTED_OPEN} fuente="${source}"${suspicious}>>> ${text} ${UNTRUSTED_CLOSE}`;
+}
+
+// para el structuredContent que el agente también le pasa al llm: limpia todo y encierra
+// entre delimitadores los textos libres (sinopsis, descripción) y cualquier texto con
+// patrones de inyección. urls, ids y números quedan iguales, porque el agente los usa para
+// las acciones open_url y el póster
+export function delimitFreeText(value: unknown, source: string, key = ''): unknown {
+  const safeSource = source.replace(/[^a-z0-9_-]/gi, '').slice(0, 40) || 'externa';
+  const clean = sanitizeUntrustedValue(value, SECURITY_LIMITS.maxUntrustedStringChars);
+  const walk = (item: unknown, itemKey: string): unknown => {
+    if (typeof item === 'string') {
+      return FREE_TEXT_KEYS.has(itemKey) || detectInjection(item).flagged
+        ? inlineBlock(safeSource, item)
+        : item;
+    }
+    if (Array.isArray(item)) return item.map((child) => walk(child, itemKey));
+    if (item && typeof item === 'object') {
+      return Object.fromEntries(Object.entries(item).map(([k, child]) => [k, walk(child, k)]));
+    }
+    return item;
+  };
+  return walk(clean, key);
+}

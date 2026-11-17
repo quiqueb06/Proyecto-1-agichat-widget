@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { SECURITY_LIMITS } from './limits.js';
-import { sanitizeUntrustedValue, wrapUntrusted } from './untrusted.js';
+import type { MCPClientLike } from '../mcp/types.js';
+import { delimitFreeText, sanitizeUntrustedValue, wrapUntrusted } from './untrusted.js';
 
 // allowlist de herramientas y validación de sus argumentos (owasp llm01).
 // el llm decide qué herramienta llamar y con qué argumentos; si una inyección lo engaña,
@@ -129,17 +130,40 @@ export function guardToolCaller(
         };
       }
       const result = await caller.callTool(name, check.args);
+      // los errores los arman nuestros servidores mcp con texto fijo: solo se limpian.
+      // si se delimitaran, el agente los copia en su respuesta y el filtro de salida
+      // bloquearía la respuesta completa
       const guarded: ToolCallResult = {
         isError: result.isError,
-        text: wrapUntrusted(policy.source, parseMaybeJson(result.text)),
+        text: result.isError
+          ? (sanitizeUntrustedValue(result.text, SECURITY_LIMITS.maxUntrustedStringChars) as string)
+          : wrapUntrusted(policy.source, parseMaybeJson(result.text)),
       };
       if (result.structuredContent) {
-        guarded.structuredContent = sanitizeUntrustedValue(
+        guarded.structuredContent = delimitFreeText(
           result.structuredContent,
-          SECURITY_LIMITS.maxUntrustedStringChars,
+          policy.source,
         ) as Record<string, unknown>;
       }
       return guarded;
     },
+  };
+}
+
+// lo mismo que guardToolCaller, pero conservando la forma completa del cliente mcp de los
+// subagentes (connect, close, listTools). listTools solo muestra la allowlist, así el llm ni
+// siquiera ve las herramientas que no le tocan
+export function guardMcpClient(
+  client: MCPClientLike,
+  policy: ToolPolicy,
+  options: GuardToolCallerOptions = {},
+): MCPClientLike {
+  const guarded = guardToolCaller(client, policy, options);
+  const allowed: readonly string[] = policy.allowedTools;
+  return {
+    connect: () => client.connect(),
+    close: () => client.close(),
+    listTools: async () => (await client.listTools()).filter((tool) => allowed.includes(tool.name)),
+    callTool: (name, args) => guarded.callTool(name, args),
   };
 }

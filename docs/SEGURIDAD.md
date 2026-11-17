@@ -81,27 +81,33 @@ Ninguna defensa sola es suficiente (los filtros por patrones se pueden evadir y 
 
 ## 3. Cómo se integra
 
-`main.ts` crea un único `SecurityContext` y envuelve el agente del gateway. El mismo contexto se le pasa al orquestador para que el canary del prompt sea el mismo que busca el filtro de salida:
+`main.ts` crea un único `SecurityContext` y lo usa en las tres capas del sistema multiagente. Así el canary que va en los prompts es el mismo que busca el filtro de salida:
 
 ```ts
-import { createSecurityContext } from './security/index.js';
-
 const security = createSecurityContext({ logger });
 
-// 1. cada prompt de sistema (orquestador y subagentes)
-const prompt = security.hardenPrompt(SYSTEM_PROMPT);
+// 1. cada cliente MCP: solo las herramientas de la allowlist, argumentos validados y
+//    resultados delimitados como no confiables (también en structuredContent)
+const movieAgent = new MovieAgent(llm, security.guardMcpClient(tmdbMcp, 'movies'), { security });
+const bookAgent = new BookComparisonAgent(llm, security.guardMcpClient(booksMcp, 'books'), {
+  security,
+});
 
-// 2. cada cliente MCP: allowlist, validación y resultados delimitados como no confiables
-const tmdb = security.guardTools(tmdbMcpClient, 'movies');
-const books = security.guardTools(booksMcpClient, 'books');
+// 2. los prompts de sistema del orquestador y de los subagentes, endurecidos con el canary
+//    (cada agente llama security.hardenPrompt con su SYSTEM_PROMPT)
+const orchestrator = new Orchestrator(llm, movieAgent, bookAgent, { security });
 
-// 3. el agente que recibe el gateway
-const agent = security.guardAgent(new Orchestrator(llm, movieAgent, bookAgent));
+// 3. el agente que recibe el gateway: filtro de entrada, filtro de salida y allowlist de urls
+createGateway({ config, agent: security.guardAgent(orchestrator), logger });
 ```
 
-`guardTools` acepta cualquier objeto con `callTool(name, args)` que devuelva `{ isError, text, structuredContent? }`, que es la forma del `MCPClientLike` de la Persona 4, así que su cliente se envuelve sin cambiarlo.
+Detalles de la integración:
 
-**Estado actual:** en `main` el agente todavía es el `EchoAgent` y ya va envuelto en `guardAgent`, así que el filtro de entrada, el filtro de salida y la allowlist de urls y acciones ya funcionan en el servidor. Los pasos 1 y 2 (`hardenPrompt` y `guardTools`) se conectan cuando se integre el orquestador de la Persona 4 (rama `feature/agente-orquestador`).
+- `guardMcpClient` conserva la forma del `MCPClientLike` (`connect`, `close`, `listTools`, `callTool`), así que los subagentes no cambian. `listTools` solo devuelve la allowlist, de modo que el LLM ni siquiera ve las herramientas que no le tocan.
+- Los subagentes le pasan al LLM tanto `text` como `structuredContent`. Por eso, en `structuredContent` también se delimitan los textos libres (`overview`, `description`) y cualquier texto con patrones de inyección. Las urls, ids y números quedan iguales porque el agente los usa para el póster y las acciones `open_url`.
+- Los errores de las herramientas no se delimitan, solo se limpian. Los arman nuestros servidores MCP con texto fijo y el agente los copia en su respuesta; si fueran delimitados, el filtro de salida bloquearía la respuesta entera.
+- El contexto de la película que el agente de libros recibe del agente de películas también va delimitado como datos de TMDB.
+- La opción `{ security }` de los agentes es opcional: sin ella se comportan como antes, así sus tests no dependen de los guardrails.
 
 ## 4. Evals
 

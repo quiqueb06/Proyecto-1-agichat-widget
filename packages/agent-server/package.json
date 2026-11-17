@@ -18,6 +18,7 @@
     "evals": "tsx src/evals/cli.ts"
   },
   "dependencies": {
+    "@modelcontextprotocol/client": "^2.4.0",
     "ws": "^8.23.0",
     "zod": "^4.6.7"
   },

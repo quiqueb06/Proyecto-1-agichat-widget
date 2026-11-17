@@ -82,6 +82,27 @@ describe('createSecurityContext', () => {
     });
   });
 
+  it('guardMcpClient envuelve un cliente MCP completo con la allowlist del subagente', async () => {
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+    const security = createSecurityContext({ logger });
+    const inner = {
+      connect: vi.fn(async () => {}),
+      close: vi.fn(async () => {}),
+      listTools: vi.fn(async () => [{ name: 'search_book', description: '', inputSchema: {} }]),
+      callTool: vi.fn(async () => ({ isError: false, text: '{}' })),
+    };
+
+    const client = security.guardMcpClient(inner, 'books');
+
+    expect((await client.listTools()).map((t) => t.name)).toEqual(['search_book']);
+    await client.callTool('search_movie', { query: 'x' });
+    expect(logger.warn).toHaveBeenCalledWith('herramienta_bloqueada', {
+      agent: 'books',
+      tool: 'search_movie',
+      reason: 'tool_not_allowed',
+    });
+  });
+
   it('expone el detector de fugas con el canary y los prompts protegidos', () => {
     const security = createSecurityContext();
     security.hardenPrompt(BASE);
