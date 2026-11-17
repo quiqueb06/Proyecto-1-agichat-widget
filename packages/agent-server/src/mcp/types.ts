@@ -14,8 +14,5 @@ export interface MCPClientLike {
   connect(): Promise<void>;
   close(): Promise<void>;
   listTools(): Promise<readonly MCPTool[]>;
-  callTool(
-    name: string,
-    args: Record<string, unknown>,
-  ): Promise<MCPToolResult>;
+  callTool(name: string, args: Record<string, unknown>): Promise<MCPToolResult>;
 }

@@ -23,10 +23,7 @@ describe('loadConfig', () => {
         baseUrl: 'https://api.groq.com/openai/v1',
       },
 
-      allowedOrigins: [
-        'http://localhost:5173',
-        'http://localhost:4173',
-      ],
+      allowedOrigins: ['http://localhost:5173', 'http://localhost:4173'],
 
       maxConnections: 100,
       maxPayloadBytes: 16 * 1024,
@@ -56,8 +53,7 @@ describe('loadConfig', () => {
       GROQ_MODEL: 'test-model',
       GROQ_BASE_URL: 'https://groq.example.com/v1',
 
-      ALLOWED_ORIGINS:
-        'https://a.github.io, http://localhost:5173',
+      ALLOWED_ORIGINS: 'https://a.github.io, http://localhost:5173',
 
       MAX_CONNECTIONS: '7',
       MAX_PAYLOAD_BYTES: '2048',
@@ -85,10 +81,7 @@ describe('loadConfig', () => {
         baseUrl: 'https://groq.example.com/v1',
       },
 
-      allowedOrigins: [
-        'https://a.github.io',
-        'http://localhost:5173',
-      ],
+      allowedOrigins: ['https://a.github.io', 'http://localhost:5173'],
 
       maxConnections: 7,
       maxPayloadBytes: 2048,

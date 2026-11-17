@@ -13,15 +13,15 @@ async function collectAsync<T>(iterable: AsyncIterable<T>): Promise<T[]> {
 
 async function collect(fake: FakeLLM) {
   return collectAsync(
-  fake.stream({
-    messages: [
-      {
-        role: 'user',
-        content: 'Hola',
-      },
-    ],
-  }),
-);
+    fake.stream({
+      messages: [
+        {
+          role: 'user',
+          content: 'Hola',
+        },
+      ],
+    }),
+  );
 }
 
 describe('FakeLLM', () => {
@@ -108,9 +108,7 @@ describe('FakeLLM', () => {
 
     await expect(async () => {
       await collect(fake);
-    }).rejects.toThrow(
-      'FakeLLM no tiene más respuestas programadas.',
-    );
+    }).rejects.toThrow('FakeLLM no tiene más respuestas programadas.');
   });
 
   it('no responde si la solicitud ya fue abortada', async () => {
@@ -125,11 +123,11 @@ describe('FakeLLM', () => {
     ]);
 
     const events = await collectAsync(
-  fake.stream({
-    messages: [],
-    signal: controller.signal,
-  }),
-);
+      fake.stream({
+        messages: [],
+        signal: controller.signal,
+      }),
+    );
 
     expect(events).toEqual([]);
     expect(fake.requests).toHaveLength(0);

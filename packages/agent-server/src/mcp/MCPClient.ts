@@ -1,10 +1,6 @@
 import { Client } from '@modelcontextprotocol/client';
 import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
-import type {
-  MCPClientLike,
-  MCPTool,
-  MCPToolResult,
-} from './types.js';
+import type { MCPClientLike, MCPTool, MCPToolResult } from './types.js';
 
 export interface MCPClientOptions {
   name: string;
@@ -61,10 +57,7 @@ export class MCPClient implements MCPClientLike {
     }));
   }
 
-  async callTool(
-    name: string,
-    args: Record<string, unknown>,
-  ): Promise<MCPToolResult> {
+  async callTool(name: string, args: Record<string, unknown>): Promise<MCPToolResult> {
     this.ensureConnected();
 
     const result = await this.client.callTool({
@@ -87,8 +80,7 @@ export class MCPClient implements MCPClientLike {
     return {
       isError: result.isError === true,
       structuredContent:
-        result.structuredContent &&
-        typeof result.structuredContent === 'object'
+        result.structuredContent && typeof result.structuredContent === 'object'
           ? (result.structuredContent as Record<string, unknown>)
           : undefined,
       text,

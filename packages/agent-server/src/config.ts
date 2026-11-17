@@ -27,14 +27,11 @@ const envSchema = z.object({
   // cada cuanto mandamos un snapshot del streaming a la widget
   STREAM_THROTTLE_MS: z.coerce.number().int().min(0).default(50),
 
-    // ---------- LLM / Groq ----------
+  // ---------- LLM / Groq ----------
 
   GROQ_API_KEY: z.string().min(1).optional(),
   GROQ_MODEL: z.string().min(1).default('openai/gpt-oss-120b'),
-  GROQ_BASE_URL: z
-    .string()
-    .url()
-    .default('https://api.groq.com/openai/v1'),
+  GROQ_BASE_URL: z.string().url().default('https://api.groq.com/openai/v1'),
 
   // ---------- limites (seguridad y cuidar las cuotas gratis de groq, tmdb y books) ----------
 

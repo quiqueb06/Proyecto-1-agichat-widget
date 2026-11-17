@@ -5,9 +5,7 @@ import { Orchestrator } from './Orchestrator.js';
 import type { MovieAgent } from './MovieAgent.js';
 import type { BookComparisonAgent } from './BookComparisonAgent.js';
 
-async function collect(
-  iterable: AsyncIterable<AgentEvent>,
-): Promise<AgentEvent[]> {
+async function collect(iterable: AsyncIterable<AgentEvent>): Promise<AgentEvent[]> {
   const events: AgentEvent[] = [];
 
   for await (const event of iterable) {
@@ -17,10 +15,7 @@ async function collect(
   return events;
 }
 
-function request(
-  content: string,
-  history: AgentRequest['history'] = [],
-): AgentRequest {
+function request(content: string, history: AgentRequest['history'] = []): AgentRequest {
   return {
     sessionId: 'test-session',
     history,
@@ -44,10 +39,8 @@ function createMovieAgent(): MovieAgent {
         rating: 8.1,
       }),
       references: {
-        imdbUrl:
-          'https://www.imdb.com/title/tt1160419/',
-        posterUrl:
-          'https://image.tmdb.org/t/p/w500/test.jpg',
+        imdbUrl: 'https://www.imdb.com/title/tt1160419/',
+        posterUrl: 'https://image.tmdb.org/t/p/w500/test.jpg',
       },
     }),
   } as unknown as MovieAgent;
@@ -56,12 +49,10 @@ function createMovieAgent(): MovieAgent {
 function createBookAgent(): BookComparisonAgent {
   return {
     run: vi.fn().mockResolvedValue({
-      text:
-        'Sí vale la pena verla; la película tiene 8.1/10 y el libro 9/10.',
+      text: 'Sí vale la pena verla; la película tiene 8.1/10 y el libro 9/10.',
       context: '',
       references: {
-        googleBooksUrl:
-          'https://books.google.com/books?id=dune',
+        googleBooksUrl: 'https://books.google.com/books?id=dune',
       },
     }),
   } as unknown as BookComparisonAgent;
@@ -76,21 +67,13 @@ describe('Orchestrator', () => {
       },
     ]);
 
-    const orchestrator = new Orchestrator(
-      llm,
-      createMovieAgent(),
-      createBookAgent(),
-    );
+    const orchestrator = new Orchestrator(llm, createMovieAgent(), createBookAgent());
 
-    const events = await collect(
-      orchestrator.respond(request('Hola')),
-    );
+    const events = await collect(orchestrator.respond(request('Hola')));
 
     expect(events[0]).toEqual({
       type: 'text',
-      delta: expect.stringContaining(
-        'Puedo recomendarte películas',
-      ),
+      delta: expect.stringContaining('Puedo recomendarte películas'),
     });
 
     expect(events[1]).toEqual({
@@ -106,40 +89,31 @@ describe('Orchestrator', () => {
         id: 'route-1',
         name: 'delegate_movies',
         arguments: {
-          request:
-            'Recomiéndame una película de ciencia ficción',
+          request: 'Recomiéndame una película de ciencia ficción',
         },
       },
     ]);
 
     const movieAgent = createMovieAgent();
 
-    const orchestrator = new Orchestrator(
-      llm,
-      movieAgent,
-      createBookAgent(),
-    );
+    const orchestrator = new Orchestrator(llm, movieAgent, createBookAgent());
 
     const events = await collect(
       orchestrator.respond(
-        request(
-          'Recomiéndame una película de ciencia ficción',
-          [
-            {
-              id: 'old-1',
-              role: 'assistant',
-              content: 'Conversación previa',
-              createdAt: new Date().toISOString(),
-              status: 'complete',
-            },
-          ],
-        ),
+        request('Recomiéndame una película de ciencia ficción', [
+          {
+            id: 'old-1',
+            role: 'assistant',
+            content: 'Conversación previa',
+            createdAt: new Date().toISOString(),
+            status: 'complete',
+          },
+        ]),
       ),
     );
 
     expect(movieAgent.run).toHaveBeenCalledWith({
-      input:
-        'Recomiéndame una película de ciencia ficción',
+      input: 'Recomiéndame una película de ciencia ficción',
       signal: expect.any(AbortSignal),
     });
 
@@ -166,11 +140,7 @@ describe('Orchestrator', () => {
     const movieAgent = createMovieAgent();
     const bookAgent = createBookAgent();
 
-    const orchestrator = new Orchestrator(
-      llm,
-      movieAgent,
-      bookAgent,
-    );
+    const orchestrator = new Orchestrator(llm, movieAgent, bookAgent);
 
     const events = await collect(
       orchestrator.respond(
@@ -195,12 +165,11 @@ describe('Orchestrator', () => {
     });
 
     expect(events).toEqual([
-  {
-    type: 'text',
-    delta:
-      'Sí vale la pena verla; la película tiene 8.1/10 y el libro 9/10.',
-  },
-]);
+      {
+        type: 'text',
+        delta: 'Sí vale la pena verla; la película tiene 8.1/10 y el libro 9/10.',
+      },
+    ]);
   });
 
   it('genera action para IMDb cuando el usuario pide abrirlo', async () => {
@@ -215,11 +184,7 @@ describe('Orchestrator', () => {
       },
     ]);
 
-    const orchestrator = new Orchestrator(
-      llm,
-      createMovieAgent(),
-      createBookAgent(),
-    );
+    const orchestrator = new Orchestrator(llm, createMovieAgent(), createBookAgent());
 
     const events = await collect(
       orchestrator.respond(
@@ -252,32 +217,24 @@ describe('Orchestrator', () => {
         id: 'route-1',
         name: 'delegate_comparison',
         arguments: {
-          request:
-            'Compara Dune y abre Google Books',
+          request: 'Compara Dune y abre Google Books',
         },
       },
     ]);
 
-    const orchestrator = new Orchestrator(
-      llm,
-      createMovieAgent(),
-      createBookAgent(),
-    );
+    const orchestrator = new Orchestrator(llm, createMovieAgent(), createBookAgent());
 
     const events = await collect(
       orchestrator.respond(
-        request(
-          'Compara Dune y abre Google Books',
-          [
-            {
-              id: 'old-1',
-              role: 'assistant',
-              content: 'Anterior',
-              createdAt: new Date().toISOString(),
-              status: 'complete',
-            },
-          ],
-        ),
+        request('Compara Dune y abre Google Books', [
+          {
+            id: 'old-1',
+            role: 'assistant',
+            content: 'Anterior',
+            createdAt: new Date().toISOString(),
+            status: 'complete',
+          },
+        ]),
       ),
     );
 
@@ -303,11 +260,7 @@ describe('Orchestrator', () => {
       },
     ]);
 
-    const orchestrator = new Orchestrator(
-      llm,
-      createMovieAgent(),
-      createBookAgent(),
-    );
+    const orchestrator = new Orchestrator(llm, createMovieAgent(), createBookAgent());
 
     const events = await collect(
       orchestrator.respond(
@@ -323,9 +276,7 @@ describe('Orchestrator', () => {
       ),
     );
 
-    expect(
-      events.some((event) => event.type === 'action'),
-    ).toBe(false);
+    expect(events.some((event) => event.type === 'action')).toBe(false);
   });
 
   it('respeta AbortSignal', async () => {
@@ -339,18 +290,12 @@ describe('Orchestrator', () => {
       },
     ]);
 
-    const orchestrator = new Orchestrator(
-      llm,
-      createMovieAgent(),
-      createBookAgent(),
-    );
+    const orchestrator = new Orchestrator(llm, createMovieAgent(), createBookAgent());
 
     const req = request('Hola');
     req.signal = controller.signal;
 
-    const events = await collect(
-      orchestrator.respond(req),
-    );
+    const events = await collect(orchestrator.respond(req));
 
     expect(events).toEqual([]);
     expect(llm.requests).toHaveLength(0);

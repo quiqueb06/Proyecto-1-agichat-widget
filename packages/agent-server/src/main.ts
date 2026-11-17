@@ -48,13 +48,9 @@ const llm = new GroqClient({
 // Antes de arrancar el servidor real, mcp-tmdb y mcp-books deben estar compilados.
 // -----------------------------------------------------------------------------
 
-const tmdbEntry = fileURLToPath(
-  new URL('../../mcp-tmdb/dist/index.js', import.meta.url),
-);
+const tmdbEntry = fileURLToPath(new URL('../../mcp-tmdb/dist/index.js', import.meta.url));
 
-const booksEntry = fileURLToPath(
-  new URL('../../mcp-books/dist/index.js', import.meta.url),
-);
+const booksEntry = fileURLToPath(new URL('../../mcp-books/dist/index.js', import.meta.url));
 
 // Pasamos solamente la configuración que necesita TMDB.
 // El MCP lee process.env; no carga automáticamente su propio archivo .env
@@ -119,16 +115,9 @@ logger.info('mcp_conectados', {
 
 const movieAgent = new MovieAgent(llm, tmdbMcp);
 
-const bookComparisonAgent = new BookComparisonAgent(
-  llm,
-  booksMcp,
-);
+const bookComparisonAgent = new BookComparisonAgent(llm, booksMcp);
 
-const orchestrator = new Orchestrator(
-  llm,
-  movieAgent,
-  bookComparisonAgent,
-);
+const orchestrator = new Orchestrator(llm, movieAgent, bookComparisonAgent);
 
 // -----------------------------------------------------------------------------
 // Gateway
@@ -164,10 +153,7 @@ async function shutdown(signal: string) {
   try {
     await gateway.close();
   } finally {
-    await Promise.allSettled([
-      tmdbMcp.close(),
-      booksMcp.close(),
-    ]);
+    await Promise.allSettled([tmdbMcp.close(), booksMcp.close()]);
   }
 
   process.exit(0);

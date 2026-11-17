@@ -37,8 +37,7 @@ async function createInMemoryPair() {
     },
   );
 
-  const [clientTransport, serverTransport] =
-    InMemoryTransport.createLinkedPair();
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
 
   const client = new Client({
     name: 'test-client',
@@ -61,9 +60,7 @@ describe('MCP SDK integration', () => {
     try {
       const result = await client.listTools();
 
-      expect(
-        result.tools.some((tool) => tool.name === 'echo_tool'),
-      ).toBe(true);
+      expect(result.tools.some((tool) => tool.name === 'echo_tool')).toBe(true);
     } finally {
       await client.close();
       await server.close();

@@ -47,8 +47,7 @@ function createMcp(): MCPClientLike {
             id: 438631,
             title: 'Dune',
             release_year: 2021,
-            poster_url:
-              'https://image.tmdb.org/t/p/w500/test.jpg',
+            poster_url: 'https://image.tmdb.org/t/p/w500/test.jpg',
           },
         ],
       },
@@ -73,9 +72,7 @@ describe('MovieAgent', () => {
       input: 'Hola',
     });
 
-    expect(result.text).toBe(
-      'Puedo ayudarte con películas.',
-    );
+    expect(result.text).toBe('Puedo ayudarte con películas.');
 
     expect(mcp.callTool).not.toHaveBeenCalled();
   });
@@ -103,12 +100,9 @@ describe('MovieAgent', () => {
       input: 'Busca Dune',
     });
 
-    expect(mcp.callTool).toHaveBeenCalledWith(
-      'search_movie',
-      {
-        query: 'Dune',
-      },
-    );
+    expect(mcp.callTool).toHaveBeenCalledWith('search_movie', {
+      query: 'Dune',
+    });
 
     expect(result.text).toBe('Encontré Dune (2021).');
   });
@@ -136,11 +130,7 @@ describe('MovieAgent', () => {
       'recommend_movies',
     ]);
 
-    expect(
-      request?.tools?.some(
-        (tool) => tool.name === 'search_book',
-      ),
-    ).toBe(false);
+    expect(request?.tools?.some((tool) => tool.name === 'search_book')).toBe(false);
   });
 
   it('respeta AbortSignal', async () => {

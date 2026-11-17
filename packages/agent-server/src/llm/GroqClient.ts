@@ -1,10 +1,4 @@
-import type {
-  LLMClient,
-  LLMEvent,
-  LLMMessage,
-  LLMRequest,
-  LLMTool,
-} from './types.js';
+import type { LLMClient, LLMEvent, LLMMessage, LLMRequest, LLMTool } from './types.js';
 
 export interface GroqClientOptions {
   apiKey: string;
@@ -95,8 +89,7 @@ export class GroqClient implements LLMClient {
   constructor(options: GroqClientOptions) {
     this.apiKey = options.apiKey;
     this.model = options.model;
-    this.baseUrl =
-      options.baseUrl ?? 'https://api.groq.com/openai/v1';
+    this.baseUrl = options.baseUrl ?? 'https://api.groq.com/openai/v1';
     this.maxRetries = Math.max(0, options.maxRetries ?? 3);
     this.fetchFn = options.fetchFn ?? fetch;
     this.sleep = options.sleep ?? defaultSleep;
@@ -198,14 +191,9 @@ export class GroqClient implements LLMClient {
       let args: Record<string, unknown>;
 
       try {
-        args = JSON.parse(call.arguments || '{}') as Record<
-          string,
-          unknown
-        >;
+        args = JSON.parse(call.arguments || '{}') as Record<string, unknown>;
       } catch {
-        throw new Error(
-          `Groq devolvió argumentos inválidos para la herramienta ${call.name}.`,
-        );
+        throw new Error(`Groq devolvió argumentos inválidos para la herramienta ${call.name}.`);
       }
 
       yield {
@@ -219,9 +207,7 @@ export class GroqClient implements LLMClient {
     }
   }
 
-  private async requestWithRetry(
-    request: LLMRequest,
-  ): Promise<Response> {
+  private async requestWithRetry(request: LLMRequest): Promise<Response> {
     let attempt = 0;
 
     while (true) {
@@ -229,53 +215,35 @@ export class GroqClient implements LLMClient {
         throw new DOMException('Aborted', 'AbortError');
       }
 
-      const response = await this.fetchFn(
-        `${this.baseUrl}/chat/completions`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: this.model,
-            messages: request.messages.map(toGroqMessage),
-            tools: request.tools?.map(toGroqTool),
-            tool_choice:
-              request.tools && request.tools.length > 0
-                ? 'auto'
-                : undefined,
-            stream: true,
-          }),
-          signal: request.signal,
+      const response = await this.fetchFn(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify({
+          model: this.model,
+          messages: request.messages.map(toGroqMessage),
+          tools: request.tools?.map(toGroqTool),
+          tool_choice: request.tools && request.tools.length > 0 ? 'auto' : undefined,
+          stream: true,
+        }),
+        signal: request.signal,
+      });
 
       if (response.ok) {
         return response;
       }
 
-      if (
-        response.status !== 429 ||
-        attempt >= this.maxRetries
-      ) {
+      if (response.status !== 429 || attempt >= this.maxRetries) {
         const text = await response.text().catch(() => '');
 
-        throw new Error(
-          `Groq respondió ${response.status}${
-            text ? `: ${text}` : ''
-          }`,
-        );
+        throw new Error(`Groq respondió ${response.status}${text ? `: ${text}` : ''}`);
       }
 
-      const retryAfter = Number(
-        response.headers.get('retry-after') ?? '1',
-      );
+      const retryAfter = Number(response.headers.get('retry-after') ?? '1');
 
-      const delayMs =
-        Number.isFinite(retryAfter) && retryAfter >= 0
-          ? retryAfter * 1000
-          : 1000;
+      const delayMs = Number.isFinite(retryAfter) && retryAfter >= 0 ? retryAfter * 1000 : 1000;
 
       attempt += 1;
 

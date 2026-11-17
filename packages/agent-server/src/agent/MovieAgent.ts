@@ -1,8 +1,4 @@
-import type {
-  LLMClient,
-  LLMMessage,
-  LLMTool,
-} from '../llm/types.js';
+import type { LLMClient, LLMMessage, LLMTool } from '../llm/types.js';
 import type { MCPClientLike } from '../mcp/types.js';
 
 export interface MovieAgentRequest {
@@ -118,29 +114,22 @@ export class MovieAgent {
       });
 
       for (const call of toolCalls) {
-        const result = await this.mcp.callTool(
-          call.name,
-          call.arguments,
-        );
+        const result = await this.mcp.callTool(call.name, call.arguments);
 
         if (result.isError) {
-  return {
-    text: `No pude consultar TMDB en este momento. Detalle técnico: ${result.text}`,
-    context: result.text,
-    references,
-  };
-}
+          return {
+            text: `No pude consultar TMDB en este momento. Detalle técnico: ${result.text}`,
+            context: result.text,
+            references,
+          };
+        }
 
         if (result.structuredContent) {
-          context.push(
-            JSON.stringify(result.structuredContent),
-          );
+          context.push(JSON.stringify(result.structuredContent));
 
-          const imdbUrl =
-            result.structuredContent.imdb_url;
+          const imdbUrl = result.structuredContent.imdb_url;
 
-          const posterUrl =
-            result.structuredContent.poster_url;
+          const posterUrl = result.structuredContent.poster_url;
 
           if (typeof imdbUrl === 'string') {
             references.imdbUrl = imdbUrl;
@@ -156,27 +145,20 @@ export class MovieAgent {
           toolCallId: call.id,
           content: JSON.stringify({
             isError: result.isError,
-            structuredContent:
-              result.structuredContent,
+            structuredContent: result.structuredContent,
             text: result.text,
           }),
         });
       }
     }
 
-    throw new Error(
-      'MovieAgent excedió el número máximo de ciclos de herramientas.',
-    );
+    throw new Error('MovieAgent excedió el número máximo de ciclos de herramientas.');
   }
 
   private async getTools(): Promise<LLMTool[]> {
     const tools = await this.mcp.listTools();
 
-    const allowed = new Set([
-      'search_movie',
-      'get_movie_details',
-      'recommend_movies',
-    ]);
+    const allowed = new Set(['search_movie', 'get_movie_details', 'recommend_movies']);
 
     return tools
       .filter((tool) => allowed.has(tool.name))

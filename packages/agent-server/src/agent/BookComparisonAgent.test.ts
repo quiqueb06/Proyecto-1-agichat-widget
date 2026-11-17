@@ -50,8 +50,7 @@ function createMcp(): MCPClientLike {
           description: 'Novela de ciencia ficción.',
           rating: 4.5,
           ratings_count: 2000,
-          infoLink:
-            'https://books.google.com/books?id=book-1',
+          infoLink: 'https://books.google.com/books?id=book-1',
         },
         relationship: 'candidate',
         match: {
@@ -86,9 +85,7 @@ describe('BookComparisonAgent', () => {
       input: '¿Qué puedes hacer?',
     });
 
-    expect(result.text).toBe(
-      'Puedo comparar películas con sus libros.',
-    );
+    expect(result.text).toBe('Puedo comparar películas con sus libros.');
 
     expect(mcp.callTool).not.toHaveBeenCalled();
   });
@@ -110,8 +107,7 @@ describe('BookComparisonAgent', () => {
       },
       {
         type: 'text',
-        text:
-          'Sí vale la pena ver Dune: la película tiene 8.1/10 y el libro 9/10.',
+        text: 'Sí vale la pena ver Dune: la película tiene 8.1/10 y el libro 9/10.',
       },
     ]);
 
@@ -124,21 +120,16 @@ describe('BookComparisonAgent', () => {
       movieContext: 'Dune, rating TMDB 8.1/10',
     });
 
-    expect(mcp.callTool).toHaveBeenCalledWith(
-      'compare_movie_book',
-      {
-        movie: {
-          title: 'Dune',
-          original_title: 'Dune',
-          rating: 8.1,
-        },
-        book_title: 'Dune',
+    expect(mcp.callTool).toHaveBeenCalledWith('compare_movie_book', {
+      movie: {
+        title: 'Dune',
+        original_title: 'Dune',
+        rating: 8.1,
       },
-    );
+      book_title: 'Dune',
+    });
 
-    expect(result.text).toContain(
-      'Sí vale la pena ver Dune',
-    );
+    expect(result.text).toContain('Sí vale la pena ver Dune');
   });
 
   it('solo expone herramientas de Books', async () => {
@@ -165,11 +156,7 @@ describe('BookComparisonAgent', () => {
       'compare_movie_book',
     ]);
 
-    expect(
-      request?.tools?.some(
-        (tool) => tool.name === 'search_movie',
-      ),
-    ).toBe(false);
+    expect(request?.tools?.some((tool) => tool.name === 'search_movie')).toBe(false);
   });
 
   it('incluye el contexto de película en el prompt', async () => {
@@ -186,8 +173,7 @@ describe('BookComparisonAgent', () => {
 
     await agent.run({
       input: 'Compara con el libro',
-      movieContext:
-        'Título: Dune. Rating: 8.1. Basada en libro.',
+      movieContext: 'Título: Dune. Rating: 8.1. Basada en libro.',
     });
 
     const request = llm.requests[0];
@@ -195,10 +181,7 @@ describe('BookComparisonAgent', () => {
     expect(
       request?.messages.some(
         (message) =>
-          message.role === 'system' &&
-          message.content.includes(
-            'Título: Dune. Rating: 8.1',
-          ),
+          message.role === 'system' && message.content.includes('Título: Dune. Rating: 8.1'),
       ),
     ).toBe(true);
   });

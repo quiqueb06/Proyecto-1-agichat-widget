@@ -9,9 +9,7 @@ describe('MCPClient', () => {
       args: [],
     });
 
-    await expect(
-      client.listTools(),
-    ).rejects.toThrow('El cliente MCP no está conectado.');
+    await expect(client.listTools()).rejects.toThrow('El cliente MCP no está conectado.');
   });
 
   it('no permite llamar herramientas antes de conectar', async () => {
@@ -21,9 +19,9 @@ describe('MCPClient', () => {
       args: [],
     });
 
-    await expect(
-      client.callTool('echo_tool', {}),
-    ).rejects.toThrow('El cliente MCP no está conectado.');
+    await expect(client.callTool('echo_tool', {})).rejects.toThrow(
+      'El cliente MCP no está conectado.',
+    );
   });
 
   it('close no falla si todavía no está conectado', async () => {

@@ -34,13 +34,15 @@ async function collect<T>(iterable: AsyncIterable<T>): Promise<T[]> {
 
 describe('GroqClient', () => {
   it('procesa texto en streaming', async () => {
-    const fetchFn = vi.fn().mockResolvedValue(
-      streamingResponse([
-        'data: {"choices":[{"delta":{"content":"Hola"}}]}\n\n',
-        'data: {"choices":[{"delta":{"content":" mundo"}}]}\n\n',
-        'data: [DONE]\n\n',
-      ]),
-    );
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValue(
+        streamingResponse([
+          'data: {"choices":[{"delta":{"content":"Hola"}}]}\n\n',
+          'data: {"choices":[{"delta":{"content":" mundo"}}]}\n\n',
+          'data: [DONE]\n\n',
+        ]),
+      );
 
     const client = new GroqClient({
       apiKey: 'test-key',
@@ -74,9 +76,7 @@ describe('GroqClient', () => {
   });
 
   it('envía mensajes y herramientas con el formato esperado', async () => {
-    const fetchFn = vi.fn().mockResolvedValue(
-      streamingResponse(['data: [DONE]\n\n']),
-    );
+    const fetchFn = vi.fn().mockResolvedValue(streamingResponse(['data: [DONE]\n\n']));
 
     const client = new GroqClient({
       apiKey: 'secret',
@@ -114,14 +114,9 @@ describe('GroqClient', () => {
       }),
     );
 
-    const [, options] = fetchFn.mock.calls[0] as [
-      string,
-      RequestInit,
-    ];
+    const [, options] = fetchFn.mock.calls[0] as [string, RequestInit];
 
-    expect(fetchFn.mock.calls[0]?.[0]).toBe(
-      'https://groq.test/v1/chat/completions',
-    );
+    expect(fetchFn.mock.calls[0]?.[0]).toBe('https://groq.test/v1/chat/completions');
 
     expect(options.headers).toEqual({
       Authorization: 'Bearer secret',
@@ -339,9 +334,7 @@ describe('GroqClient', () => {
           messages: [],
         }),
       ),
-    ).rejects.toThrow(
-      'Groq devolvió argumentos inválidos para la herramienta search_movie.',
-    );
+    ).rejects.toThrow('Groq devolvió argumentos inválidos para la herramienta search_movie.');
   });
 
   it('no hace requests si ya está abortado', async () => {

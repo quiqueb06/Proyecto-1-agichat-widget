@@ -1,15 +1,8 @@
 import { z } from 'zod';
 import type { TmdbClient } from './tmdbClient.js';
 import { TmdbError } from './config.js';
-import {
-  searchMovieOutputSchema,
-  getMovieDetailsOutputSchema,
-} from './schemas.js';
-import type {
-  SearchMovieInput,
-  GetMovieDetailsInput,
-  RecommendMoviesInput,
-} from './schemas.js';
+import { searchMovieOutputSchema, getMovieDetailsOutputSchema } from './schemas.js';
+import type { SearchMovieInput, GetMovieDetailsInput, RecommendMoviesInput } from './schemas.js';
 
 const id = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
 const text = z.string().trim().min(1).max(200);
@@ -42,9 +35,7 @@ const list = z.object({
 const details = movie.extend({
   genres: z.array(genre).max(100).nullish(),
   vote_average: z.number().min(0).max(10).nullish(),
-  imdb_id: z
-    .union([z.string().regex(/^tt\d+$/), z.literal('')])
-    .nullish(),
+  imdb_id: z.union([z.string().regex(/^tt\d+$/), z.literal('')]).nullish(),
   keywords: z
     .object({
       keywords: z
@@ -117,24 +108,16 @@ function summary(m: z.infer<typeof movie>) {
     id: m.id,
     title: m.title,
     original_title: m.original_title ?? null,
-    release_year: m.release_date
-      ? Number(m.release_date.slice(0, 4))
-      : null,
+    release_year: m.release_date ? Number(m.release_date.slice(0, 4)) : null,
     overview: m.overview ?? null,
-    poster_url: m.poster_path
-      ? `https://image.tmdb.org/t/p/w500${m.poster_path}`
-      : null,
+    poster_url: m.poster_path ? `https://image.tmdb.org/t/p/w500${m.poster_path}` : null,
   };
 }
 
 export class MovieService {
-  constructor(private client: TmdbClient) { }
+  constructor(private client: TmdbClient) {}
 
-  private searchRaw(
-    query: string,
-    year?: number,
-    signal?: AbortSignal,
-  ) {
+  private searchRaw(query: string, year?: number, signal?: AbortSignal) {
     return this.client.get(
       '/search/movie',
       {
@@ -144,35 +127,23 @@ export class MovieService {
         ...(year === undefined
           ? {}
           : {
-            year: String(year),
-          }),
+              year: String(year),
+            }),
       },
       list,
       signal,
     );
   }
 
-  async search(
-    input: SearchMovieInput,
-    signal?: AbortSignal,
-  ) {
-    const data = await this.searchRaw(
-      input.query,
-      input.year,
-      signal,
-    );
+  async search(input: SearchMovieInput, signal?: AbortSignal) {
+    const data = await this.searchRaw(input.query, input.year, signal);
 
     return searchMovieOutputSchema.parse({
-      results: data.results
-        .slice(0, input.limit)
-        .map(summary),
+      results: data.results.slice(0, input.limit).map(summary),
     });
   }
 
-  async details(
-    input: GetMovieDetailsInput,
-    signal?: AbortSignal,
-  ) {
+  async details(input: GetMovieDetailsInput, signal?: AbortSignal) {
     const m = await this.client.get(
       `/movie/${input.id}`,
       {
@@ -188,11 +159,7 @@ export class MovieService {
     }
 
     const evidence = m.keywords?.keywords
-      .filter(
-        (keyword) =>
-          normalize(keyword.name) ===
-          'based on novel or book',
-      )
+      .filter((keyword) => normalize(keyword.name) === 'based on novel or book')
       .slice(0, 20)
       .map((keyword) => ({
         source: 'tmdb_keyword' as const,
@@ -210,28 +177,21 @@ export class MovieService {
       genres: m.genres ?? null,
       rating: m.vote_average ?? null,
       imdb_id: m.imdb_id || null,
-      imdb_url: m.imdb_id
-        ? `https://www.imdb.com/title/${m.imdb_id}/`
-        : null,
+      imdb_url: m.imdb_id ? `https://www.imdb.com/title/${m.imdb_id}/` : null,
       literary_adaptation: evidence?.length
         ? {
-          status: 'evidence_found',
-          evidence,
-        }
+            status: 'evidence_found',
+            evidence,
+          }
         : {
-          status: 'unknown',
-          evidence: [],
-          reason: m.keywords
-            ? 'no_matching_keyword'
-            : 'keywords_unavailable',
-        },
+            status: 'unknown',
+            evidence: [],
+            reason: m.keywords ? 'no_matching_keyword' : 'keywords_unavailable',
+          },
     });
   }
 
-  async recommend(
-    input: RecommendMoviesInput,
-    signal?: AbortSignal,
-  ) {
+  async recommend(input: RecommendMoviesInput, signal?: AbortSignal) {
     let genreId: number | undefined;
 
     if (input.genre) {
@@ -247,9 +207,7 @@ export class MovieService {
       );
 
       genreId = data.genres.find(
-        (candidate) =>
-          normalizeGenre(candidate.name) ===
-          normalizeGenre(input.genre!),
+        (candidate) => normalizeGenre(candidate.name) === normalizeGenre(input.genre!),
       )?.id;
 
       if (!genreId) {
@@ -260,27 +218,17 @@ export class MovieService {
     let data: z.infer<typeof list>;
 
     if (input.similar_to) {
-      const candidates = await this.searchRaw(
-        input.similar_to,
-        undefined,
-        signal,
-      );
+      const candidates = await this.searchRaw(input.similar_to, undefined, signal);
 
-      const ranked = [...candidates.results].sort(
-        (a, b) => {
-          const rank = (
-            candidate: z.infer<typeof movie>,
-          ) =>
-            normalize(candidate.title) ===
-              normalize(input.similar_to!) ||
-              normalize(candidate.original_title ?? '') ===
-              normalize(input.similar_to!)
-              ? 0
-              : 1;
+      const ranked = [...candidates.results].sort((a, b) => {
+        const rank = (candidate: z.infer<typeof movie>) =>
+          normalize(candidate.title) === normalize(input.similar_to!) ||
+          normalize(candidate.original_title ?? '') === normalize(input.similar_to!)
+            ? 0
+            : 1;
 
-          return rank(a) - rank(b) || a.id - b.id;
-        },
-      );
+        return rank(a) - rank(b) || a.id - b.id;
+      });
 
       const selected = ranked[0];
 
@@ -306,14 +254,14 @@ export class MovieService {
 
           ...(genreId
             ? {
-              with_genres: String(genreId),
-            }
+                with_genres: String(genreId),
+              }
             : {}),
 
           ...(input.year
             ? {
-              primary_release_year: String(input.year),
-            }
+                primary_release_year: String(input.year),
+              }
             : {}),
         },
         list,
@@ -325,12 +273,8 @@ export class MovieService {
       results: data.results
         .filter(
           (candidate) =>
-            (!genreId ||
-              candidate.genre_ids?.includes(genreId)) &&
-            (!input.year ||
-              candidate.release_date?.startsWith(
-                `${input.year}-`,
-              )),
+            (!genreId || candidate.genre_ids?.includes(genreId)) &&
+            (!input.year || candidate.release_date?.startsWith(`${input.year}-`)),
         )
         .slice(0, input.limit)
         .map(summary),

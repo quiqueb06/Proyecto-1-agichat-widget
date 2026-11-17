@@ -1,22 +1,12 @@
-import type {
-  LLMClient,
-  LLMMessage,
-  LLMTool,
-  LLMToolCall,
-} from '../llm/types.js';
-import type {
-  AgentEvent,
-  AgentRequest,
-  AgentRunner,
-} from './types.js';
+import type { LLMClient, LLMMessage, LLMTool, LLMToolCall } from '../llm/types.js';
+import type { AgentEvent, AgentRequest, AgentRunner } from './types.js';
 import type { MovieAgent } from './MovieAgent.js';
 import type { BookComparisonAgent } from './BookComparisonAgent.js';
 
 const ROUTING_TOOLS: LLMTool[] = [
   {
     name: 'delegate_movies',
-    description:
-      'Usa este subagente para buscar, recomendar u obtener información de películas.',
+    description: 'Usa este subagente para buscar, recomendar u obtener información de películas.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -74,42 +64,27 @@ Responde en español.
 const CAPABILITIES_MESSAGE =
   'Puedo recomendarte películas, compararlas con sus libros cuando exista una referencia adecuada y ayudarte a abrir IMDb o Google Books.';
 
-function historyToLLMMessages(
-  history: AgentRequest['history'],
-): LLMMessage[] {
+function historyToLLMMessages(history: AgentRequest['history']): LLMMessage[] {
   return history
-    .filter(
-      (message) =>
-        message.role === 'user' ||
-        message.role === 'assistant',
-    )
+    .filter((message) => message.role === 'user' || message.role === 'assistant')
     .map((message) => ({
       role: message.role as 'user' | 'assistant',
       content: message.content,
     }));
 }
 
-function requestFromCall(
-  call: LLMToolCall,
-  fallback: string,
-): string {
+function requestFromCall(call: LLMToolCall, fallback: string): string {
   const request = call.arguments.request;
 
-  return typeof request === 'string' && request.trim()
-    ? request
-    : fallback;
+  return typeof request === 'string' && request.trim() ? request : fallback;
 }
 
-function wantsOpen(
-  input: string,
-  target: 'imdb' | 'books',
-): boolean {
+function wantsOpen(input: string, target: 'imdb' | 'books'): boolean {
   const normalized = input.toLowerCase();
 
-  const asksToOpen =
-    /\b(abrir|abre|ábreme|mostrar|muestra|ir a|llévame|llevarme)\b/i.test(
-      normalized,
-    );
+  const asksToOpen = /\b(abrir|abre|ábreme|mostrar|muestra|ir a|llévame|llevarme)\b/i.test(
+    normalized,
+  );
 
   if (!asksToOpen) {
     return false;
@@ -119,10 +94,7 @@ function wantsOpen(
     return normalized.includes('imdb');
   }
 
-  return (
-    normalized.includes('google books') ||
-    normalized.includes('libro')
-  );
+  return normalized.includes('google books') || normalized.includes('libro');
 }
 
 export class Orchestrator implements AgentRunner {
@@ -132,9 +104,7 @@ export class Orchestrator implements AgentRunner {
     private readonly bookAgent: BookComparisonAgent,
   ) {}
 
-  async *respond(
-    request: AgentRequest,
-  ): AsyncIterable<AgentEvent> {
+  async *respond(request: AgentRequest): AsyncIterable<AgentEvent> {
     if (request.signal.aborted) {
       return;
     }
@@ -195,10 +165,7 @@ export class Orchestrator implements AgentRunner {
     }
 
     if (route.name === 'delegate_movies') {
-      const delegatedRequest = requestFromCall(
-        route,
-        request.input.content,
-      );
+      const delegatedRequest = requestFromCall(route, request.input.content);
 
       const result = await this.movieAgent.run({
         input: delegatedRequest,
@@ -212,10 +179,7 @@ export class Orchestrator implements AgentRunner {
         };
       }
 
-      if (
-        result.references.imdbUrl &&
-        wantsOpen(request.input.content, 'imdb')
-      ) {
+      if (result.references.imdbUrl && wantsOpen(request.input.content, 'imdb')) {
         yield {
           type: 'action',
           action: {
@@ -230,10 +194,7 @@ export class Orchestrator implements AgentRunner {
     }
 
     if (route.name === 'delegate_comparison') {
-      const delegatedRequest = requestFromCall(
-        route,
-        request.input.content,
-      );
+      const delegatedRequest = requestFromCall(route, request.input.content);
 
       // Primero obtenemos contexto fiable de la película.
       // La respuesta de MovieAgent NO se muestra directamente al usuario
@@ -262,10 +223,7 @@ export class Orchestrator implements AgentRunner {
         };
       }
 
-      if (
-        movie.references.imdbUrl &&
-        wantsOpen(request.input.content, 'imdb')
-      ) {
+      if (movie.references.imdbUrl && wantsOpen(request.input.content, 'imdb')) {
         yield {
           type: 'action',
           action: {
@@ -276,10 +234,7 @@ export class Orchestrator implements AgentRunner {
         };
       }
 
-      if (
-        comparison.references.googleBooksUrl &&
-        wantsOpen(request.input.content, 'books')
-      ) {
+      if (comparison.references.googleBooksUrl && wantsOpen(request.input.content, 'books')) {
         yield {
           type: 'action',
           action: {
@@ -293,8 +248,6 @@ export class Orchestrator implements AgentRunner {
       return;
     }
 
-    throw new Error(
-      `El orquestador recibió una delegación desconocida: ${route.name}`,
-    );
+    throw new Error(`El orquestador recibió una delegación desconocida: ${route.name}`);
   }
 }

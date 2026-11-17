@@ -1,8 +1,4 @@
-import type {
-  LLMClient,
-  LLMMessage,
-  LLMTool,
-} from '../llm/types.js';
+import type { LLMClient, LLMMessage, LLMTool } from '../llm/types.js';
 import type { MCPClientLike } from '../mcp/types.js';
 
 export interface BookComparisonRequest {
@@ -50,9 +46,7 @@ export class BookComparisonAgent {
     private readonly mcp: MCPClientLike,
   ) {}
 
-  async run(
-    request: BookComparisonRequest,
-  ): Promise<BookComparisonResult> {
+  async run(request: BookComparisonRequest): Promise<BookComparisonResult> {
     const tools = await this.getTools();
 
     const messages: LLMMessage[] = [
@@ -79,8 +73,7 @@ export class BookComparisonAgent {
 
     const context: string[] = [];
 
-    const references: BookComparisonResult['references'] =
-      {};
+    const references: BookComparisonResult['references'] = {};
 
     for (let round = 0; round < 8; round += 1) {
       if (request.signal?.aborted) {
@@ -126,49 +119,35 @@ export class BookComparisonAgent {
       });
 
       for (const call of toolCalls) {
-        const result = await this.mcp.callTool(
-          call.name,
-          call.arguments,
-        );
+        const result = await this.mcp.callTool(call.name, call.arguments);
 
         if (result.isError) {
-  return {
-    text:
-      'No pude consultar Google Books en este momento. ' +
-      `Detalle técnico: ${result.text}`,
-    context: result.text,
-    references,
-  };
-}
+          return {
+            text:
+              'No pude consultar Google Books en este momento. ' +
+              `Detalle técnico: ${result.text}`,
+            context: result.text,
+            references,
+          };
+        }
 
         if (result.structuredContent) {
-          context.push(
-            JSON.stringify(result.structuredContent),
-          );
+          context.push(JSON.stringify(result.structuredContent));
 
-          const book =
-            result.structuredContent.book;
+          const book = result.structuredContent.book;
 
-          if (
-            book &&
-            typeof book === 'object'
-          ) {
-            const infoLink = (
-              book as Record<string, unknown>
-            ).infoLink;
+          if (book && typeof book === 'object') {
+            const infoLink = (book as Record<string, unknown>).infoLink;
 
             if (typeof infoLink === 'string') {
-              references.googleBooksUrl =
-                infoLink;
+              references.googleBooksUrl = infoLink;
             }
           }
 
-          const infoLink =
-            result.structuredContent.infoLink;
+          const infoLink = result.structuredContent.infoLink;
 
           if (typeof infoLink === 'string') {
-            references.googleBooksUrl =
-              infoLink;
+            references.googleBooksUrl = infoLink;
           }
         }
 
@@ -177,27 +156,20 @@ export class BookComparisonAgent {
           toolCallId: call.id,
           content: JSON.stringify({
             isError: result.isError,
-            structuredContent:
-              result.structuredContent,
+            structuredContent: result.structuredContent,
             text: result.text,
           }),
         });
       }
     }
 
-    throw new Error(
-      'BookComparisonAgent excedió el número máximo de ciclos de herramientas.',
-    );
+    throw new Error('BookComparisonAgent excedió el número máximo de ciclos de herramientas.');
   }
 
   private async getTools(): Promise<LLMTool[]> {
     const tools = await this.mcp.listTools();
 
-    const allowed = new Set([
-      'search_book',
-      'get_book_details',
-      'compare_movie_book',
-    ]);
+    const allowed = new Set(['search_book', 'get_book_details', 'compare_movie_book']);
 
     return tools
       .filter((tool) => allowed.has(tool.name))

@@ -1,8 +1,4 @@
-import type {
-  LLMClient,
-  LLMEvent,
-  LLMRequest,
-} from './types.js';
+import type { LLMClient, LLMEvent, LLMRequest } from './types.js';
 
 export type FakeLLMResponse =
   | {
@@ -55,16 +51,9 @@ export class FakeLLM implements LLMClient {
       return;
     }
 
-    const chunkSize = Math.max(
-      1,
-      response.chunkSize ?? response.text.length,
-    );
+    const chunkSize = Math.max(1, response.chunkSize ?? response.text.length);
 
-    for (
-      let offset = 0;
-      offset < response.text.length;
-      offset += chunkSize
-    ) {
+    for (let offset = 0; offset < response.text.length; offset += chunkSize) {
       if (request.signal?.aborted) {
         return;
       }
