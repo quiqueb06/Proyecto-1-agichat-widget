@@ -195,12 +195,12 @@ describe('Orchestrator', () => {
     });
 
     expect(events).toEqual([
-      {
-        type: 'text',
-        delta:
-          'Te recomiendo Dune.\n\nSí vale la pena verla; la película tiene 8.1/10 y el libro 9/10.',
-      },
-    ]);
+  {
+    type: 'text',
+    delta:
+      'Sí vale la pena verla; la película tiene 8.1/10 y el libro 9/10.',
+  },
+]);
   });
 
   it('genera action para IMDb cuando el usuario pide abrirlo', async () => {

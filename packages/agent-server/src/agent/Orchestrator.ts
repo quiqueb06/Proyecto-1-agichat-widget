@@ -4,7 +4,11 @@ import type {
   LLMTool,
   LLMToolCall,
 } from '../llm/types.js';
-import type { AgentEvent, AgentRequest, AgentRunner } from './types.js';
+import type {
+  AgentEvent,
+  AgentRequest,
+  AgentRunner,
+} from './types.js';
 import type { MovieAgent } from './MovieAgent.js';
 import type { BookComparisonAgent } from './BookComparisonAgent.js';
 
@@ -96,7 +100,10 @@ function requestFromCall(
     : fallback;
 }
 
-function wantsOpen(input: string, target: 'imdb' | 'books'): boolean {
+function wantsOpen(
+  input: string,
+  target: 'imdb' | 'books',
+): boolean {
   const normalized = input.toLowerCase();
 
   const asksToOpen =
@@ -228,10 +235,9 @@ export class Orchestrator implements AgentRunner {
         request.input.content,
       );
 
-      /*
-       * Primero consultamos películas porque Books necesita
-       * contexto fiable de TMDB para comparar.
-       */
+      // Primero obtenemos contexto fiable de la película.
+      // La respuesta de MovieAgent NO se muestra directamente al usuario
+      // en este flujo; se usa únicamente como contexto para Books.
       const movie = await this.movieAgent.run({
         input: delegatedRequest,
         signal: request.signal,
@@ -247,15 +253,12 @@ export class Orchestrator implements AgentRunner {
         signal: request.signal,
       });
 
-      const sections = [
-        movie.text,
-        comparison.text,
-      ].filter(Boolean);
-
-      if (sections.length > 0) {
+      // En comparación mostramos solamente la respuesta final del
+      // BookComparisonAgent para evitar dos respuestas consecutivas.
+      if (comparison.text) {
         yield {
           type: 'text',
-          delta: sections.join('\n\n'),
+          delta: comparison.text,
         };
       }
 
