@@ -1,16 +1,8 @@
 export type LLMRole = 'system' | 'user' | 'assistant' | 'tool';
 
-export interface LLMMessage {
-  role: LLMRole;
-  content: string;
-  // se usa cuando el mensaje corresponde al resultado de una herramienta
-  toolCallId?: string;
-}
-
 export interface LLMTool {
   name: string;
   description: string;
-  // JSON Schema que describe los argumentos aceptados por la herramienta
   inputSchema: Record<string, unknown>;
 }
 
@@ -18,6 +10,17 @@ export interface LLMToolCall {
   id: string;
   name: string;
   arguments: Record<string, unknown>;
+}
+
+export interface LLMMessage {
+  role: LLMRole;
+  content: string;
+
+  // Solo aplica a mensajes role="tool"
+  toolCallId?: string;
+
+  // Solo aplica a mensajes role="assistant" cuando pidió herramientas
+  toolCalls?: readonly LLMToolCall[];
 }
 
 export interface LLMRequest {

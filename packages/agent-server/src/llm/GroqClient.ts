@@ -52,6 +52,21 @@ function toGroqMessage(message: LLMMessage) {
     };
   }
 
+  if (message.role === 'assistant' && message.toolCalls?.length) {
+    return {
+      role: 'assistant',
+      content: message.content || null,
+      tool_calls: message.toolCalls.map((call) => ({
+        id: call.id,
+        type: 'function',
+        function: {
+          name: call.name,
+          arguments: JSON.stringify(call.arguments),
+        },
+      })),
+    };
+  }
+
   return {
     role: message.role,
     content: message.content,
