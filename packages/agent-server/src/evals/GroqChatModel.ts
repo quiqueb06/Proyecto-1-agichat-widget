@@ -9,7 +9,8 @@ const MISSING_KEY = 'Falta GROQ_API_KEY (ponla en packages/agent-server/.env)';
 
 const envSchema = z.object({
   GROQ_API_KEY: z.string({ error: MISSING_KEY }).min(1, MISSING_KEY),
-  GROQ_MODEL: z.string().min(1).default('llama-3.3-70b-versatile'),
+  // llama-3.3-70b-versatile ya no está disponible en groq (model_not_found)
+  GROQ_MODEL: z.string().min(1).default('openai/gpt-oss-120b'),
   GROQ_BASE_URL: z.url().default('https://api.groq.com/openai/v1'),
 });
 
@@ -65,7 +66,8 @@ export class GroqChatModel implements ChatModel {
           messages,
           // poca temperatura: queremos evals lo más repetibles posible
           temperature: 0.2,
-          max_tokens: 800,
+          // los modelos gpt-oss cuentan el razonamiento dentro de max_tokens
+          max_tokens: 2000,
         }),
         signal,
       });

@@ -12,7 +12,7 @@ function model(fetchImpl: typeof fetch, sleep = vi.fn(async (_ms: number) => {})
     sleep,
     groq: new GroqChatModel({
       apiKey: KEY,
-      model: 'llama-3.3-70b-versatile',
+      model: 'openai/gpt-oss-120b',
       baseUrl: 'https://api.groq.com/openai/v1',
       fetch: fetchImpl,
       sleep,
@@ -24,7 +24,7 @@ describe('loadGroqEvalConfig', () => {
   it('lee la key y usa el modelo y la url por defecto', () => {
     expect(loadGroqEvalConfig({ GROQ_API_KEY: KEY })).toEqual({
       apiKey: KEY,
-      model: 'llama-3.3-70b-versatile',
+      model: 'openai/gpt-oss-120b',
       baseUrl: 'https://api.groq.com/openai/v1',
     });
   });
@@ -55,10 +55,12 @@ describe('GroqChatModel', () => {
     expect((init.headers as Record<string, string>).Authorization).toBe(`Bearer ${KEY}`);
     const body = JSON.parse(init.body as string);
     expect(body).toMatchObject({
-      model: 'llama-3.3-70b-versatile',
+      model: 'openai/gpt-oss-120b',
       messages: [{ role: 'user', content: 'hola' }],
     });
-    expect(groq.name).toBe('groq: llama-3.3-70b-versatile');
+    // gpt-oss gasta tokens razonando: con poco margen la respuesta sale cortada
+    expect(body.max_tokens).toBeGreaterThanOrEqual(2000);
+    expect(groq.name).toBe('groq: openai/gpt-oss-120b');
   });
 
   it('reintenta ante un 429 respetando retry-after', async () => {

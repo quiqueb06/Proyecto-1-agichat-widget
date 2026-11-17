@@ -60,7 +60,7 @@ export interface CaseRun {
 
 export interface EvalTarget {
   kind: TargetKind;
-  // descripción para el reporte, ej. "groq: llama-3.3-70b-versatile"
+  // descripción para el reporte, ej. "groq: openai/gpt-oss-120b"
   description: string;
   run(evalCase: EvalCase): Promise<CaseRun>;
 }
