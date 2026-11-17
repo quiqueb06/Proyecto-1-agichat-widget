@@ -38,6 +38,12 @@ Reglas:
 - El veredicto debe ser razonado y debe indicar claramente si vale la pena ver la película.
 - Si existe infoLink, puedes mencionarlo como referencia de Google Books.
 - Responde en español.
+- Toda afirmación factual sobre un libro debe provenir de las herramientas de Google Books de este turno.
+- No uses conocimiento propio para completar autor, rating, reseñas, sinopsis, fechas o enlaces.
+- No uses Goodreads, Amazon, Wikipedia ni otras fuentes externas.
+- Nunca inventes URLs, IDs ni ratings de Google Books.
+- Si una herramienta no devuelve un dato, indica que no está disponible.
+- found:true en compare_movie_book representa un candidato, no prueba por sí solo que exista una adaptación confirmada.
 `.trim();
 
 export class BookComparisonAgent {
@@ -126,6 +132,16 @@ export class BookComparisonAgent {
           call.name,
           call.arguments,
         );
+
+        if (result.isError) {
+  return {
+    text:
+      'No pude consultar Google Books en este momento. ' +
+      `Detalle técnico: ${result.text}`,
+    context: result.text,
+    references,
+  };
+}
 
         if (result.structuredContent) {
           context.push(
