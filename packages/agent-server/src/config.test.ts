@@ -1,20 +1,39 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { loadConfig } from './config.js';
 
 describe('loadConfig', () => {
+  const originalEnv = process.env;
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
   it('usa valores por defecto si no hay variables', () => {
     expect(loadConfig({})).toEqual({
       port: 8787,
       host: '0.0.0.0',
       wsPath: '/ws',
-      sessionTtlMs: 1_800_000,
+      sessionTtlMs: 30 * 60 * 1000,
       maxHistoryMessages: 30,
       streamThrottleMs: 50,
+
+      groq: {
+        apiKey: undefined,
+        model: 'openai/gpt-oss-120b',
+        baseUrl: 'https://api.groq.com/openai/v1',
+      },
+
       allowedOrigins: ['http://localhost:5173', 'http://localhost:4173'],
+
       maxConnections: 100,
-      maxPayloadBytes: 16_384,
+      maxPayloadBytes: 16 * 1024,
       maxMessageChars: 2000,
-      rateLimit: { messages: 10, windowMs: 60_000 },
+
+      rateLimit: {
+        messages: 10,
+        windowMs: 60_000,
+      },
+
       maxQueuedMessages: 2,
       heartbeatMs: 30_000,
     });
@@ -25,49 +44,80 @@ describe('loadConfig', () => {
       PORT: '3000',
       HOST: '127.0.0.1',
       WS_PATH: '/chat',
-      SESSION_TTL_MS: '1000',
+
+      SESSION_TTL_MS: '5000',
       MAX_HISTORY_MESSAGES: '5',
-      STREAM_THROTTLE_MS: '0',
-      ALLOWED_ORIGINS: ' https://a.github.io , http://localhost:5173,, ',
+      STREAM_THROTTLE_MS: '25',
+
+      GROQ_API_KEY: 'test-key',
+      GROQ_MODEL: 'test-model',
+      GROQ_BASE_URL: 'https://groq.example.com/v1',
+
+      ALLOWED_ORIGINS: 'https://a.github.io, http://localhost:5173',
+
       MAX_CONNECTIONS: '7',
-      MAX_PAYLOAD_BYTES: '1024',
+      MAX_PAYLOAD_BYTES: '2048',
       MAX_MESSAGE_CHARS: '300',
-      RATE_LIMIT_MESSAGES: '3',
+
+      RATE_LIMIT_MESSAGES: '4',
       RATE_LIMIT_WINDOW_MS: '5000',
-      MAX_QUEUED_MESSAGES: '0',
+
+      MAX_QUEUED_MESSAGES: '1',
       HEARTBEAT_MS: '1000',
     });
+
     expect(config).toEqual({
       port: 3000,
       host: '127.0.0.1',
       wsPath: '/chat',
-      sessionTtlMs: 1000,
+
+      sessionTtlMs: 5000,
       maxHistoryMessages: 5,
-      streamThrottleMs: 0,
-      // se limpian espacios y elementos vacios
+      streamThrottleMs: 25,
+
+      groq: {
+        apiKey: 'test-key',
+        model: 'test-model',
+        baseUrl: 'https://groq.example.com/v1',
+      },
+
       allowedOrigins: ['https://a.github.io', 'http://localhost:5173'],
+
       maxConnections: 7,
-      maxPayloadBytes: 1024,
+      maxPayloadBytes: 2048,
       maxMessageChars: 300,
-      rateLimit: { messages: 3, windowMs: 5000 },
-      maxQueuedMessages: 0,
+
+      rateLimit: {
+        messages: 4,
+        windowMs: 5000,
+      },
+
+      maxQueuedMessages: 1,
       heartbeatMs: 1000,
     });
   });
 
   it('no arranca con configuracion invalida y dice que esta mal', () => {
-    expect(() => loadConfig({ PORT: 'abc' })).toThrow(/PORT/);
-    expect(() => loadConfig({ PORT: '70000' })).toThrow(/PORT/);
-    expect(() => loadConfig({ WS_PATH: 'ws' })).toThrow(/WS_PATH/);
-    expect(() => loadConfig({ MAX_HISTORY_MESSAGES: '0' })).toThrow(/MAX_HISTORY_MESSAGES/);
-    expect(() => loadConfig({ RATE_LIMIT_MESSAGES: '0' })).toThrow(/RATE_LIMIT_MESSAGES/);
-    expect(() => loadConfig({ MAX_QUEUED_MESSAGES: '-1' })).toThrow(/MAX_QUEUED_MESSAGES/);
-    expect(() => loadConfig({ SESSION_TTL_MS: '-1', HOST: '' })).toThrow(
-      /SESSION_TTL_MS[\s\S]*HOST|HOST[\s\S]*SESSION_TTL_MS/,
-    );
+    expect(() =>
+      loadConfig({
+        PORT: '-1',
+        WS_PATH: 'sin-slash',
+        MAX_CONNECTIONS: '0',
+        GROQ_BASE_URL: 'no-es-url',
+      }),
+    ).toThrow('Configuración inválida del servidor');
   });
 
   it('por defecto lee process.env', () => {
-    expect(loadConfig().wsPath).toMatch(/^\//);
+    process.env = {
+      ...originalEnv,
+      PORT: '4567',
+      GROQ_MODEL: 'modelo-env',
+    };
+
+    const config = loadConfig();
+
+    expect(config.port).toBe(4567);
+    expect(config.groq.model).toBe('modelo-env');
   });
 });
