@@ -4,6 +4,7 @@ import type { AgentEvent, AgentRequest } from './types.js';
 import { Orchestrator } from './Orchestrator.js';
 import type { MovieAgent } from './MovieAgent.js';
 import type { BookComparisonAgent } from './BookComparisonAgent.js';
+import { createSecurityContext } from '../security/SecurityContext.js';
 
 async function collect(iterable: AsyncIterable<AgentEvent>): Promise<AgentEvent[]> {
   const events: AgentEvent[] = [];
@@ -299,5 +300,19 @@ describe('Orchestrator', () => {
 
     expect(events).toEqual([]);
     expect(llm.requests).toHaveLength(0);
+  });
+});
+
+describe('Orchestrator con guardrails', () => {
+  it('usa el prompt de sistema endurecido con el canary', async () => {
+    const security = createSecurityContext();
+    const llm = new FakeLLM([{ type: 'text', text: 'Hola' }]);
+    const orchestrator = new Orchestrator(llm, createMovieAgent(), createBookAgent(), {
+      security,
+    });
+
+    await collect(orchestrator.respond(request('hola')));
+
+    expect(llm.requests[0]!.messages[0]!.content).toContain(security.canary);
   });
 });

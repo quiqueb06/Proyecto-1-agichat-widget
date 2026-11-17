@@ -7,6 +7,7 @@ import { createGateway } from './gateway/server.js';
 import { GroqClient } from './llm/GroqClient.js';
 import { createLogger } from './logger.js';
 import { MCPClient } from './mcp/MCPClient.js';
+import { createSecurityContext } from './security/index.js';
 
 // Carga packages/agent-server/.env si existe.
 // En producción, las variables las proporciona la plataforma.
@@ -18,6 +19,10 @@ try {
 
 const logger = createLogger();
 const config = loadConfig();
+
+// guardrails contra owasp llm01 y llm07 (docs/SEGURIDAD.md). un solo contexto para todo:
+// así el canary que va en los prompts es el mismo que busca el filtro de salida
+const security = createSecurityContext({ logger });
 
 if (!config.groq.apiKey) {
   throw new Error(
@@ -113,11 +118,18 @@ logger.info('mcp_conectados', {
 // Multi-agent system
 // -----------------------------------------------------------------------------
 
-const movieAgent = new MovieAgent(llm, tmdbMcp);
+// cada subagente recibe su cliente mcp envuelto: solo ve las herramientas de su allowlist,
+// los argumentos se validan y los resultados llegan delimitados como datos no confiables.
+// los prompts de sistema van endurecidos con las reglas de seguridad y el canary
+const movieAgent = new MovieAgent(llm, security.guardMcpClient(tmdbMcp, 'movies'), { security });
 
-const bookComparisonAgent = new BookComparisonAgent(llm, booksMcp);
+const bookComparisonAgent = new BookComparisonAgent(
+  llm,
+  security.guardMcpClient(booksMcp, 'books'),
+  { security },
+);
 
-const orchestrator = new Orchestrator(llm, movieAgent, bookComparisonAgent);
+const orchestrator = new Orchestrator(llm, movieAgent, bookComparisonAgent, { security });
 
 // -----------------------------------------------------------------------------
 // Gateway
@@ -125,7 +137,8 @@ const orchestrator = new Orchestrator(llm, movieAgent, bookComparisonAgent);
 
 const gateway = createGateway({
   config,
-  agent: orchestrator,
+  // filtro de entrada, filtro de salida (canary y citas del prompt) y allowlist de urls
+  agent: security.guardAgent(orchestrator),
   logger,
 });
 

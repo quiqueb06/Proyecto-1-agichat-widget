@@ -46,10 +46,10 @@ flowchart LR
 ```
 
 El diagrama representa la arquitectura objetivo, no certifica que todos los servicios
-estén integrados. MCP TMDB, pósters y créditos están implementados. El diagrama representa 
-la arquitectura actualmente integrada del Proyecto 2. El backend utiliza el `Orchestrator` 
-como implementación de `AgentRunner`, integra Groq mediante `LLMClient`, y delega en `MovieAgent` 
-y `BookComparisonAgent`, que consumen los servidores MCP de TMDB y Google Books respectivamente. 
+estén integrados. MCP TMDB, pósters y créditos están implementados. El diagrama representa
+la arquitectura actualmente integrada del Proyecto 2. El backend utiliza el `Orchestrator`
+como implementación de `AgentRunner`, integra Groq mediante `LLMClient`, y delega en `MovieAgent`
+y `BookComparisonAgent`, que consumen los servidores MCP de TMDB y Google Books respectivamente.
 La caché de cada MCP es local a su proceso..
 
 ### 3.1 Detalle interno del SDK (bajo nivel)

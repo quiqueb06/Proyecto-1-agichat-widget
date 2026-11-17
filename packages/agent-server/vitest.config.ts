@@ -9,8 +9,8 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'json-summary'],
       include: ['src/**/*.ts'],
-      // main.ts solo arranca el servidor (conecta piezas que ya tienen tests)
-      exclude: ['src/**/*.test.ts', 'src/main.ts'],
+      // main.ts y evals/cli.ts solo arrancan (conectan piezas que ya tienen tests)
+      exclude: ['src/**/*.test.ts', 'src/main.ts', 'src/evals/cli.ts'],
       // misma regla que la widget: si la cobertura baja de 80 % el ci falla
       thresholds: {
         lines: 80,

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { FakeLLM } from '../llm/FakeLLM.js';
 import type { MCPClientLike } from '../mcp/types.js';
 import { MovieAgent } from './MovieAgent.js';
+import { createSecurityContext } from '../security/SecurityContext.js';
 
 function createMcp(): MCPClientLike {
   return {
@@ -154,5 +155,20 @@ describe('MovieAgent', () => {
 
     expect(result.text).toBe('');
     expect(llm.requests).toHaveLength(0);
+  });
+});
+
+describe('MovieAgent con guardrails', () => {
+  it('usa el prompt de sistema endurecido con el canary', async () => {
+    const security = createSecurityContext();
+    const llm = new FakeLLM([{ type: 'text', text: 'Hola' }]);
+    const agent = new MovieAgent(llm, createMcp(), { security });
+
+    await agent.run({ input: 'hola', signal: new AbortController().signal });
+
+    const system = llm.requests[0]!.messages[0]!;
+    expect(system.role).toBe('system');
+    expect(system.content).toContain(security.canary);
+    expect(system.content).toContain('Reglas de seguridad');
   });
 });

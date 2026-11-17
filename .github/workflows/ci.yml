@@ -65,6 +65,30 @@ jobs:
           path: coverage/
           retention-days: 7
 
+  # evals de seguridad (owasp llm01 y llm07, docs/SEGURIDAD.md) contra el llm falso.
+  # nunca llama a groq ni usa keys: contra el modelo real se corren a mano.
+  # la misma suite tambien corre dentro de los tests (evals.test.ts), asi que bloquea el merge
+  evals:
+    name: Evals de seguridad (LLM falso)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run evals
+      - name: Reporte en el resumen
+        if: always()
+        run: cat packages/agent-server/evals-reports/*.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: evals-report
+          path: packages/agent-server/evals-reports/
+          retention-days: 14
+
   browser:
     name: Acciones en Chrome y Firefox
     runs-on: ubuntu-latest
@@ -93,8 +117,11 @@ jobs:
       - uses: actions/checkout@v7
       - run: docker build -f packages/agent-server/Dockerfile -t agichat-agent .
       - name: Arranca y responde /health
+        # main.ts exige GROQ_API_KEY y TMDB_API_TOKEN para arrancar. aqui van valores falsos:
+        # /health no llama a ninguna api, asi que el ci sigue sin usar keys reales
         run: |
-          docker run -d --name agente -p 8787:8787 agichat-agent
+          docker run -d --name agente -p 8787:8787 \
+            -e GROQ_API_KEY=ci-sin-key -e TMDB_API_TOKEN=ci-sin-token agichat-agent
           for i in $(seq 1 20); do
             if curl -fs http://localhost:8787/health; then exit 0; fi
             sleep 1

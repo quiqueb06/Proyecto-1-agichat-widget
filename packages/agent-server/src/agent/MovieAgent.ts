@@ -1,5 +1,6 @@
 import type { LLMClient, LLMMessage, LLMTool } from '../llm/types.js';
 import type { MCPClientLike } from '../mcp/types.js';
+import type { AgentOptions } from './types.js';
 
 export interface MovieAgentRequest {
   input: string;
@@ -44,10 +45,15 @@ Reglas:
 `.trim();
 
 export class MovieAgent {
+  private readonly systemPrompt: string;
+
   constructor(
     private readonly llm: LLMClient,
     private readonly mcp: MCPClientLike,
-  ) {}
+    options: AgentOptions = {},
+  ) {
+    this.systemPrompt = options.security?.hardenPrompt(SYSTEM_PROMPT) ?? SYSTEM_PROMPT;
+  }
 
   async run(request: MovieAgentRequest): Promise<MovieAgentResult> {
     const tools = await this.getTools();
@@ -55,7 +61,7 @@ export class MovieAgent {
     const messages: LLMMessage[] = [
       {
         role: 'system',
-        content: SYSTEM_PROMPT,
+        content: this.systemPrompt,
       },
       ...(request.history ?? []),
       {

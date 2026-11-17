@@ -4,6 +4,8 @@ dist-demo/
 coverage/
 test-results/
 playwright-report/
+# reportes locales de npm run evals (los oficiales se guardan en docs/evals/)
+evals-reports/
 *.log
 .env
 .env.*

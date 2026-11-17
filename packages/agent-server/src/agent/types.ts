@@ -31,3 +31,16 @@ export type AgentEvent =
 export interface AgentRunner {
   respond(request: AgentRequest): AsyncIterable<AgentEvent>;
 }
+
+// guardrails que los agentes usan por dentro (docs/SEGURIDAD.md). los cumple el
+// SecurityContext de src/security; es opcional para que los tests puedan crear agentes sin él
+export interface AgentSecurity {
+  // agrega las reglas de seguridad y el canary al prompt de sistema
+  hardenPrompt(basePrompt: string): string;
+  // delimita datos externos (tmdb, google books) como no confiables
+  wrapUntrusted(source: string, data: unknown): string;
+}
+
+export interface AgentOptions {
+  security?: AgentSecurity;
+}

@@ -1,5 +1,5 @@
 import type { LLMClient, LLMMessage, LLMTool, LLMToolCall } from '../llm/types.js';
-import type { AgentEvent, AgentRequest, AgentRunner } from './types.js';
+import type { AgentEvent, AgentOptions, AgentRequest, AgentRunner } from './types.js';
 import type { MovieAgent } from './MovieAgent.js';
 import type { BookComparisonAgent } from './BookComparisonAgent.js';
 
@@ -98,11 +98,16 @@ function wantsOpen(input: string, target: 'imdb' | 'books'): boolean {
 }
 
 export class Orchestrator implements AgentRunner {
+  private readonly systemPrompt: string;
+
   constructor(
     private readonly llm: LLMClient,
     private readonly movieAgent: MovieAgent,
     private readonly bookAgent: BookComparisonAgent,
-  ) {}
+    options: AgentOptions = {},
+  ) {
+    this.systemPrompt = options.security?.hardenPrompt(SYSTEM_PROMPT) ?? SYSTEM_PROMPT;
+  }
 
   async *respond(request: AgentRequest): AsyncIterable<AgentEvent> {
     if (request.signal.aborted) {
@@ -119,7 +124,7 @@ export class Orchestrator implements AgentRunner {
     const messages: LLMMessage[] = [
       {
         role: 'system',
-        content: SYSTEM_PROMPT,
+        content: this.systemPrompt,
       },
       ...historyToLLMMessages(request.history),
       {
