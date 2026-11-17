@@ -1,4 +1,8 @@
-import type { LLMClient, LLMMessage, LLMTool } from '../llm/types.js';
+import type {
+  LLMClient,
+  LLMMessage,
+  LLMTool,
+} from '../llm/types.js';
 import type { MCPClientLike } from '../mcp/types.js';
 
 export interface MovieAgentRequest {
@@ -9,6 +13,11 @@ export interface MovieAgentRequest {
 
 export interface MovieAgentResult {
   text: string;
+  context: string;
+  references: {
+    imdbUrl?: string;
+    posterUrl?: string;
+  };
 }
 
 const SYSTEM_PROMPT = `
@@ -58,11 +67,16 @@ export class MovieAgent {
 
     let finalText = '';
 
-    // Permitimos varios ciclos de tools, pero con límite para evitar loops.
+    const context: string[] = [];
+
+    const references: MovieAgentResult['references'] = {};
+
     for (let round = 0; round < 8; round += 1) {
       if (request.signal?.aborted) {
         return {
           text: finalText,
+          context: context.join('\n'),
+          references,
         };
       }
 
@@ -86,14 +100,14 @@ export class MovieAgent {
         finalText += text;
       }
 
-      // Si el modelo ya respondió y no pidió tools, terminamos.
       if (toolCalls.length === 0) {
         return {
           text: finalText.trim(),
+          context: context.join('\n'),
+          references,
         };
       }
 
-      // Guardamos el mensaje del assistant con sus tool calls.
       messages.push({
         role: 'assistant',
         content: text,
@@ -106,12 +120,41 @@ export class MovieAgent {
           call.arguments,
         );
 
+        if (result.isError) {
+  return {
+    text: `No pude consultar TMDB en este momento. Detalle técnico: ${result.text}`,
+    context: result.text,
+    references,
+  };
+}
+
+        if (result.structuredContent) {
+          context.push(
+            JSON.stringify(result.structuredContent),
+          );
+
+          const imdbUrl =
+            result.structuredContent.imdb_url;
+
+          const posterUrl =
+            result.structuredContent.poster_url;
+
+          if (typeof imdbUrl === 'string') {
+            references.imdbUrl = imdbUrl;
+          }
+
+          if (typeof posterUrl === 'string') {
+            references.posterUrl = posterUrl;
+          }
+        }
+
         messages.push({
           role: 'tool',
           toolCallId: call.id,
           content: JSON.stringify({
             isError: result.isError,
-            structuredContent: result.structuredContent,
+            structuredContent:
+              result.structuredContent,
             text: result.text,
           }),
         });

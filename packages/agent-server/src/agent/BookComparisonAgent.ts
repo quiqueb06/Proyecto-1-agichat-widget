@@ -14,6 +14,10 @@ export interface BookComparisonRequest {
 
 export interface BookComparisonResult {
   text: string;
+  context: string;
+  references: {
+    googleBooksUrl?: string;
+  };
 }
 
 const SYSTEM_PROMPT = `
@@ -69,10 +73,17 @@ export class BookComparisonAgent {
 
     let finalText = '';
 
+    const context: string[] = [];
+
+    const references: BookComparisonResult['references'] =
+      {};
+
     for (let round = 0; round < 8; round += 1) {
       if (request.signal?.aborted) {
         return {
           text: finalText,
+          context: context.join('\n'),
+          references,
         };
       }
 
@@ -99,6 +110,8 @@ export class BookComparisonAgent {
       if (toolCalls.length === 0) {
         return {
           text: finalText.trim(),
+          context: context.join('\n'),
+          references,
         };
       }
 
@@ -114,12 +127,44 @@ export class BookComparisonAgent {
           call.arguments,
         );
 
+        if (result.structuredContent) {
+          context.push(
+            JSON.stringify(result.structuredContent),
+          );
+
+          const book =
+            result.structuredContent.book;
+
+          if (
+            book &&
+            typeof book === 'object'
+          ) {
+            const infoLink = (
+              book as Record<string, unknown>
+            ).infoLink;
+
+            if (typeof infoLink === 'string') {
+              references.googleBooksUrl =
+                infoLink;
+            }
+          }
+
+          const infoLink =
+            result.structuredContent.infoLink;
+
+          if (typeof infoLink === 'string') {
+            references.googleBooksUrl =
+              infoLink;
+          }
+        }
+
         messages.push({
           role: 'tool',
           toolCallId: call.id,
           content: JSON.stringify({
             isError: result.isError,
-            structuredContent: result.structuredContent,
+            structuredContent:
+              result.structuredContent,
             text: result.text,
           }),
         });
